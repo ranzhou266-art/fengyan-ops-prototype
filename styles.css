@@ -127,6 +127,13 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;}
 }
 .menu-sub.disabled{color:var(--text-3);cursor:not-allowed;}
 
+/* 侧栏一级菜单折叠/展开 */
+.group-title.collapsible{cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;}
+.group-title.collapsible::after{content:'';width:7px;height:7px;margin-right:4px;border-right:2px solid var(--text-3);border-bottom:2px solid var(--text-3);transform:rotate(45deg);transition:transform .18s ease;flex-shrink:0;}
+.group-title.collapsible:hover::after{border-color:var(--primary);}
+.group-title.collapsible.collapsed::after{transform:rotate(-45deg);}
+.hidden{display:none !important;}
+
 .main{flex:1;min-width:0;padding:var(--sp-5);overflow-y:auto;}
 .page-head{margin-bottom:var(--sp-5);}
 .page-title{font-size:24px;font-weight:700;color:var(--text-1);margin:0;line-height:1.3;}
