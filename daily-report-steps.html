@@ -1,0 +1,1630 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>日报填写（精简版）· 小程序端</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #d7e0e6;
+    color: #1f2d3d;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .mp {
+    max-width: 440px;
+    margin: 0 auto;
+    min-height: 100vh;
+    background: #ECF2F5;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: 0 0 24px rgba(0,0,0,.08);
+  }
+  .mp-bar {
+    height: 48px;
+    background: #2f8f6b;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    font-size: 17px;
+    font-weight: 600;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+  .mp-bar .back {
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    margin-right: 6px; cursor: pointer; opacity: .9;
+  }
+  .mp-bar .title { flex: 1; text-align: center; margin-right: 34px; }
+  .mp-bar .sub { font-size: 11px; font-weight: 400; opacity: .85; margin-left: 6px; }
+
+  .mp-body { flex: 1; padding: 14px 14px 96px; overflow-y: auto; }
+
+  .import-bar {
+    display: flex; gap: 10px; align-items: center; margin-bottom: 14px;
+    background: #fff; border: 1px solid #dae5ea; border-radius: 10px; padding: 10px 12px;
+  }
+  .btn-import {
+    flex: 0 0 auto; border: none; background: #2b5e9c; color: #fff;
+    font-family: inherit; font-size: 13px; font-weight: 600; line-height: 1;
+    border-radius: 8px; padding: 9px 14px; cursor: pointer;
+  }
+  .btn-import:active { background: #214a80; }
+  .btn-import:disabled { background: #c3cdd6; cursor: not-allowed; }
+  .import-hint { font-size: 12px; color: #6b7884; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .mod-wrap {
+    position: sticky; top: 48px; z-index: 19; flex-shrink: 0;
+    background: #ECF2F5; border-bottom: 1px solid #dae5ea;
+  }
+  .mod-nav {
+    display: flex; gap: 6px; padding: 8px 12px; overflow-x: auto;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  }
+  .mod-nav::-webkit-scrollbar { display: none; }
+  .mod-nav button {
+    display: inline-flex; align-items: center; gap: 5px;
+    flex: 0 0 auto; border: 1px solid #d4dde3; background: #fff; color: #5a6b78;
+    border-radius: 999px; padding: 4px 11px 4px 5px; font-size: 13px; font-family: inherit;
+    cursor: pointer; white-space: nowrap; line-height: 1.2;
+  }
+  .mod-n {
+    width: 17px; height: 17px; border-radius: 50%; background: #eaeff2; color: #8b98a4;
+    font-size: 10.5px; font-style: normal; font-weight: 700; flex: 0 0 auto;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .mod-nav button.done .mod-n { background: #d8ece3; color: #2f8f6b; }
+  .mod-nav button.active { background: #2f8f6b; border-color: #2f8f6b; color: #fff; font-weight: 600; }
+  .mod-nav button.active .mod-n { background: rgba(255,255,255,.26); color: #fff; }
+  .mod-nav button:disabled { opacity: .45; cursor: not-allowed; }
+  .mod-prog { height: 2px; background: #e2eaee; }
+  .mod-prog > i { display: block; height: 100%; width: 0; background: #2f8f6b; border-radius: 0 2px 2px 0; transition: width .3s ease; }
+  .card { scroll-margin-top: 106px; }
+
+  .card {
+    background: #fff; border-radius: 12px; padding: 14px 12px 4px;
+    margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.04);
+  }
+  .card.hidden { display: none !important; }
+  .card-h {
+    font-size: 13px; font-weight: 700; color: #2f8f6b;
+    margin: 0 0 10px 2px; letter-spacing: .5px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .card-h::before { content: ""; width: 3px; height: 13px; background: #2f8f6b; border-radius: 2px; }
+
+  .field { margin-bottom: 14px; }
+  .field.hidden { display: none !important; }
+  .field > label {
+    display: block; font-size: 13.5px; color: #45525e; margin-bottom: 6px; font-weight: 500;
+  }
+  .req { color: #e0552f; margin-left: 2px; font-weight: 700; }
+  .opt { color: #9aa7b2; font-size: 12px; font-weight: 400; margin-left: 6px; }
+  .fi-hint { font-size: 12px; color: #7a8794; margin-top: 5px; line-height: 1.45; }
+  .fi-hint b { color: #2c6b52; font-weight: 600; }
+  /* 工作日期 + 星期：用 flex 排版，彻底避免手机端原生日期控件文字与星期重叠 */
+  .date-wrap { display: flex; align-items: center; gap: 10px; }
+  .date-wrap input[type="date"] { flex: 1 1 auto; min-width: 0; width: auto; }
+  .fi-weekday { flex: 0 0 auto; font-size: 15px; color: #2f8f6b; font-weight: 500; pointer-events: none; white-space: nowrap; }
+
+  .combobox { position: relative; }
+  .combobox input {
+    width: 100%; box-sizing: border-box; border: 1.5px solid #d4dde3; border-radius: 10px;
+    padding: 10px 12px; font-size: 15px; font-family: inherit; background: #fff; color: #1f2d38;
+  }
+  .combobox input:focus { border-color: #2f8f6b; outline: none; }
+  .cb-list {
+    position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 30;
+    background: #fff; border: 1px solid #e2e8ec; border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(20,40,30,.12); max-height: 240px; overflow-y: auto;
+  }
+  .cb-list.hidden { display: none; }
+  .cb-opt {
+    padding: 11px 12px; font-size: 14px; color: #1f2d38; cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  }
+  .cb-opt:hover, .cb-opt.active { background: #e7f1ec; }
+  .cb-code { font-size: 12px; color: #6b7a86; font-family: ui-monospace, Menlo, monospace; }
+  .cb-empty { padding: 12px; font-size: 13px; color: #9aa7b2; text-align: center; }
+
+  input[type=text], input[type=number], input[type=date], input[type=search], select, textarea {
+    width: 100%; border: 1px solid #d4dde3; border-radius: 9px;
+    padding: 11px 12px; font-size: 15px; color: #1f2d3d; background: #fbfdfe;
+    font-family: inherit; outline: none; transition: border-color .15s;
+    min-height: 44px; /* 手机端点击区域不小于 44px */
+  }
+  input:focus, select:focus, textarea:focus { border-color: #2f8f6b; background: #fff; }
+  textarea { resize: vertical; min-height: 64px; }
+  select { appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%237a8794' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;
+  }
+  .err input, .err select, .err textarea { border-color: #e0552f; background: #fdf3f0; }
+  .field-textarea { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1.5px solid #d6dee4; border-radius: 9px; font-size: 14px; font-family: inherit; background: #fff; resize: vertical; min-height: 60px; }
+  .field-textarea:focus { border-color: #2f8f6b; outline: none; }
+
+  #sel-team option { font-size: 14px; }
+
+  .entry-list { display: flex; flex-direction: column; gap: 10px; }
+
+  /* 人员考勤花名册 */
+  .roster { display: flex; flex-direction: column; gap: 8px; }
+  .ros-row {
+    display: flex; align-items: center; gap: 8px;
+    background: #f7fafb; border: 1px solid #e6edf1; border-radius: 10px; padding: 8px;
+  }
+  .ros-row .ros-chk { width: 20px; height: 20px; flex: 0 0 auto; accent-color: #2f8f6b; }
+  .ros-name { flex: 0 0 62px; min-width: 0; font-size: 14px; color: #1f2d3d; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ros-row .ros-att { flex: 1.1; min-width: 0; }
+  .ros-row .ros-role { flex: 1.4; min-width: 0; display: flex; align-items: center; gap: 5px; }
+  .ros-row .ros-role select { flex: 1; min-width: 0; }
+  .ros-row .ros-att select, .ros-row .ros-role select { padding: 8px 9px; font-size: 13.5px; }
+  .ros-drive { display: inline-flex; align-items: center; gap: 3px; font-size: 12.5px; color: #45525e; white-space: nowrap; }
+  .ros-drive input { width: 16px; height: 16px; accent-color: #2f8f6b; }
+  .ros-add-sel { margin-top: 10px; font-size: 13.5px; }
+  .ros-empty { font-size: 12.5px; color: #9aa7b2; padding: 2px 2px 0; }
+
+  .entry-row {
+    background: #f7fafb; border: 1px solid #e6edf1; border-radius: 10px; padding: 8px;
+    margin-bottom: 8px;
+  }
+  .cf-line { display: flex; gap: 8px; align-items: center; }
+  .entry-row .col-type { flex: 1.25; min-width: 0; }
+  .entry-row .col-amt { flex: 1; display: flex; align-items: center; gap: 4px; min-width: 0; }
+  .entry-row .col-amt input { width: 100%; }
+  .entry-row .unit { font-size: 13px; color: #7a8794; white-space: nowrap; }
+  .entry-row .rm { flex: 0 0 32px; height: 32px; }
+  .cf-photo { margin-top: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .cf-remark { margin-top: 8px; }
+  .cf-remark label { display: block; font-size: 12px; color: #45525e; margin-bottom: 4px; }
+  .cf-remark-inp { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1.5px solid #d6dee4; border-radius: 9px; font-size: 14px; font-family: inherit; background: #fff; }
+  .cf-remark-inp:focus { border-color: #2f8f6b; outline: none; }
+  .cf-photo .ts-up {
+    flex: 0 0 auto; border: 1.5px dashed #9cc7b6; background: #f2f8f5; color: #2f8f6b;
+    border-radius: 9px; padding: 8px 12px; font-size: 13px; cursor: pointer; font-family: inherit; white-space: nowrap;
+  }
+  .cf-prev { display: flex; }
+  .entry-sum {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 10px; font-size: 14px; color: #2c6b52; font-weight: 600;
+  }
+  .entry-sum .sum-num { color: #e0552f; font-size: 16px; font-variant-numeric: tabular-nums; }
+
+  .prod-row {
+    background: #fff; border: 1px solid #dce6eb; border-radius: 12px; padding: 12px; margin-bottom: 10px;
+  }
+  .prod-row:last-child { margin-bottom: 0; }
+  .wi-row-h { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .wi-idx { font-size: 13.5px; font-weight: 600; color: #2c6b52; }
+  .wi-field { margin-bottom: 10px; }
+  .wi-field:last-child { margin-bottom: 0; }
+  .wi-field > label { display: block; font-size: 13px; color: #45525e; margin-bottom: 5px; font-weight: 500; }
+  .wi-label-row { display: flex; align-items: center; justify-content: space-between; }
+  .wi-label-row > label { margin-bottom: 0; }
+  .wi-adj-hint-inline { display: inline; margin-left: 6px; font-size: 12px; color: #c9821f; font-weight: 400; }
+  .wi-field textarea { resize: vertical; min-height: 60px; }
+  .wi-field.wi-std.hidden { display: none; }
+  .prod-add-proj { font-size: 11.5px; color: #8a97a3; margin-top: 4px; }
+  .wi-daily { margin-top: 2px; }
+  .wi-daily .dv-pending { font-size: 12px; color: #9aa7b2; }
+  .wi-daily .dv-ok { font-size: 12px; color: #2f8f6b; }
+  .wi-daily .dv-ok b { font-weight: 700; font-size: 13px; }
+  .wi-ratio-line { display: flex; gap: 10px; }
+  .wi-ratio-line .wi-field { flex: 1; min-width: 0; margin-bottom: 0; }
+  .wi-before-tag { display: inline-block; margin-left: 6px; font-size: 11px; color: #c9821f; background: #fff6e9; border: 1px solid #f3dcb4; border-radius: 4px; padding: 0 5px; line-height: 16px; vertical-align: 1px; font-weight: 400; }
+  .wi-ratio-line input:disabled, .wi-field input:disabled {
+    background: #f4f6f7; border-color: #e3e9ed; color: #8b98a4;
+    -webkit-text-fill-color: #8b98a4; opacity: 1;
+  }
+  .wi-content-view {
+    border: 1px solid #e8eef2; border-radius: 10px; padding: 9px 10px; min-height: 44px;
+    background: #f6f9fa; font-size: 13px; line-height: 1.55; color: #8b98a4; white-space: pre-wrap;
+  }
+  /* 累计完工比例：唯一需要填写的字段，高亮突出 */
+  .wi-field .wi-cum-input {
+    border: 1.5px solid #2f8f6b; background: #eef8f3; color: #0f6e56;
+    font-weight: 700; font-size: 16px;
+  }
+  .wi-field .wi-cum-input:focus { border-color: #0f6e56; background: #fff; }
+  /* 标准人工天等参考字段置灰 */
+  .wi-field.wi-std label { color: #8b98a4; font-weight: 400; }
+  .wi-cum-label { color: #0f6e56; font-weight: 600; }
+  .wi-content-view .muted { color: #9aa7b2; }
+  .wi-edit-btn {
+    margin-top: 0; border: 1.5px solid #9cc7b6; background: #f2f8f5; color: #2f8f6b;
+    border-radius: 8px; padding: 4px 11px; font-size: 12.5px; font-weight: 600; cursor: pointer;
+    font-family: inherit;
+  }
+  .wi-edit-btn:active { background: #e7f3ee; }
+  .wi-edit-actions { display: flex; gap: 10px; margin-top: 8px; }
+  .wi-edit-actions button {
+    flex: 1; border-radius: 8px; padding: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .wi-edit-cancel { border: 1.5px solid #d6dee4; background: #fff; color: #6b7782; }
+  .wi-edit-confirm { border: 1.5px solid #2f8f6b; background: #2f8f6b; color: #fff; }
+  .wi-edit-confirm:active { background: #287a5b; }
+  .rm {
+    flex: 0 0 32px; height: 32px; border: none; background: #fdecea; color: #e0552f;
+    border-radius: 8px; font-size: 17px; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; padding: 0;
+  }
+  .rm:active { background: #f9d8d2; }
+  .entry-add {
+    width: 100%; border: 1.5px dashed #9cc7b6; background: #f2f8f5; color: #2f8f6b;
+    border-radius: 10px; padding: 10px; font-size: 14px; font-weight: 600; cursor: pointer;
+    font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 4px;
+    margin-top: 10px;
+  }
+  .entry-add:active { background: #e7f3ee; }
+  .entry-empty { font-size: 12.5px; color: #9aa7b2; padding: 2px 2px 0; }
+
+  .upload {
+    border: 1.5px dashed #b9c6cf; border-radius: 10px; padding: 16px;
+    text-align: center; color: #7a8794; cursor: pointer; background: #f7fafb;
+  }
+  .upload:active { background: #eef4f1; }
+  .upload svg { display: block; margin: 0 auto 6px; }
+  .previews { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .thumb { position: relative; width: 72px; height: 72px; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8ec; }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb .del {
+    position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%;
+    background: rgba(0,0,0,.55); color: #fff; border: none; font-size: 13px; line-height: 1;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .photo-count { font-size: 12px; color: #7a8794; margin-top: 6px; }
+  .previews:empty { display: none; }
+
+  .mp-foot {
+    position: sticky; bottom: 0; background: #fff; border-top: 1px solid #e6edf1;
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); display: flex; gap: 10px;
+    flex-shrink: 0; z-index: 20;
+  }
+  .mp-foot button {
+    flex: 1; border: none; border-radius: 10px; padding: 13px 0; font-size: 16px;
+    font-weight: 600; font-family: inherit; cursor: pointer;
+  }
+  .btn-reset { background: #eef2f4; color: #5a6772; flex: 0 0 34%; }
+  .btn-submit { background: #2f8f6b; color: #fff; }
+
+  .toast {
+    position: fixed; left: 50%; top: 50%; transform: translate(-50%,-50%);
+    background: rgba(30,40,50,.92); color: #fff; padding: 12px 18px; border-radius: 10px;
+    font-size: 14px; z-index: 100; max-width: 80%; text-align: center; opacity: 0;
+    transition: opacity .2s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+
+  .modal-mask {
+    position: fixed; inset: 0; background: rgba(20,30,40,.5); z-index: 90;
+    display: flex; align-items: flex-end; justify-content: center;
+  }
+  .modal-mask.hidden { display: none; }
+  .modal {
+    background: #fff; width: 100%; max-width: 440px; border-radius: 16px 16px 0 0;
+    max-height: 86vh; display: flex; flex-direction: column; overflow: hidden;
+    animation: up .25s ease;
+  }
+  @keyframes up { from { transform: translateY(30px); opacity: .6; } to { transform: none; opacity: 1; } }
+  .modal-h { padding: 14px 16px; font-weight: 700; border-bottom: 1px solid #eef2f4; display: flex; justify-content: space-between; align-items: center; }
+  .modal-h .x { color: #9aa7b2; font-size: 20px; cursor: pointer; line-height: 1; }
+  .modal-b { padding: 12px 16px; overflow-y: auto; }
+  .modal-b pre { background: #f4f7f9; border: 1px solid #e6edf1; border-radius: 10px; padding: 12px;
+    font-size: 12px; line-height: 1.55; white-space: pre-wrap; word-break: break-all; margin: 0; color: #2a3742; }
+  .modal-f { padding: 10px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid #eef2f4; }
+  .modal-f button { width: 100%; border: none; background: #2f8f6b; color: #fff; border-radius: 10px; padding: 12px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; }
+
+  /* ============ 分步向导 ============ */
+  .step-pane.hidden { display: none; }
+  .mod-nav { gap: 6px; }
+  .mod-nav button {
+    flex: 1 1 0; justify-content: center; padding: 7px 6px;
+    border-radius: 9px; min-width: 0; min-height: 36px; font-size: 12.5px;
+  }
+  .mod-nav button .mod-n { width: 16px; height: 16px; font-size: 10px; }
+  .btn-prev, .btn-next {
+    flex: 1; border: none; border-radius: 10px; padding: 12px; font-size: 15px;
+    font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .btn-prev { background: #eaeff2; color: #45525e; }
+  .btn-next { background: #2f8f6b; color: #fff; }
+  .btn-prev.hidden, .btn-next.hidden, .btn-submit.hidden { display: none; }
+
+  /* 产品编号折叠卡片 */
+  .prod-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .prod-head .wi-prod { flex: 1; min-width: 0; }
+  .prod-row.collapsed .prod-head { background: #f2f7f5; border-radius: 9px; padding: 4px 8px; margin-left: -8px; margin-right: -8px; }
+  .prod-row.collapsed .prod-body { display: none; }
+  .ps-meta { font-size: 12px; color: #2f8f6b; flex: 0 0 auto; font-weight: 600; white-space: nowrap; }
+  .prod-row:not(.collapsed) .ps-meta { display: none; }
+  .prod-toggle {
+    flex: 0 0 auto; width: 32px; height: 32px; border: 1px solid #d4dde3; background: #fff;
+    border-radius: 8px; color: #5a6b78; font-size: 12px; cursor: pointer; font-family: inherit;
+    display: inline-flex; align-items: center; justify-content: center; padding: 0;
+  }
+  .prod-row .wi-daily { margin: 0 0 8px 2px; }
+</style>
+</head>
+<body>
+<div class="mp">
+  <div class="mp-bar">
+    <span class="back" onclick="history.length>1?history.back():void 0" aria-label="返回">
+      <svg width="20" height="20" viewBox="0 0 20 20"><path d="M12 4l-6 6 6 6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </span>
+    <span class="title">日报填写<span class="sub">分步版</span></span>
+  </div>
+
+  <div class="mod-wrap">
+    <nav class="mod-nav" id="modNav"></nav>
+    <div class="mod-prog"><i id="modProg"></i></div>
+  </div>
+
+  <div class="mp-body" id="mpBody">
+    <div class="step-pane" id="pane-0">
+    <div class="import-bar" id="importBar" style="display:none;">
+      <button type="button" class="btn-import" id="btnImportLast">导入上次日报</button>
+      <span class="import-hint" id="importHint"></span>
+    </div>
+
+    <!-- ① 基础信息：日期 → 班组 → 项目 → 考勤类型 → 天气 → 作业类型 -->
+    <div class="card" id="baseCard">
+      <div class="card-h">基础信息</div>
+
+      <div class="field" id="workDate">
+        <label>工作日期<span class="req" data-req="workDate">*</span></label>
+        <div class="date-wrap">
+          <input type="date" id="in-date">
+          <span class="fi-weekday" id="weekday"></span>
+        </div>
+      </div>
+
+      <div class="field" id="teamField">
+        <label>班组<span class="req" data-req="teamField">*</span><span class="opt">（选项含「自有 / 外包」标识）</span></label>
+        <select id="sel-team"><option value="">请选择班组</option></select>
+        <div class="fi-hint" id="teamHint"></div>
+      </div>
+
+      <div class="field" id="project">
+        <label>项目<span class="req" data-req="project">*</span><span class="opt">（输入名称或编号搜索）</span></label>
+        <div class="combobox" id="projectCb">
+          <input type="text" id="in-project" placeholder="输入项目名称或编号搜索" autocomplete="off">
+          <div class="cb-list hidden" id="projectList"></div>
+        </div>
+      </div>
+
+      <div class="field" id="attTypeField">
+        <label>考勤类型<span class="req" data-req="attTypeField">*</span></label>
+        <select id="sel-attType"><option value="">请选择考勤类型</option></select>
+        <div class="fi-hint" id="attTypeHint"></div>
+      </div>
+
+      <div class="field" id="weather">
+        <label>天气情况<span class="req" data-req="weather">*</span><span class="opt">（仅考勤类型为「场内等待」时填写）</span></label>
+        <select id="sel-weather"><option value="">请选择天气</option></select>
+      </div>
+
+      <div class="field hidden" id="waitDesc">
+        <label>具体情况说明<span class="req" data-req="waitDesc">*</span><span class="opt">（仅考勤类型为「场内等待」时填写）</span></label>
+        <textarea id="in-waitDesc" class="field-textarea" placeholder="请说明场内等待的具体情况（如：受大风影响无法吊装作业，等待天气好转）"></textarea>
+      </div>
+
+      <div class="field" id="jobType">
+        <label>作业类型<span class="req" data-req="jobType">*</span><span class="opt">（仅考勤类型为「出勤」时填写）</span></label>
+        <select id="sel-jobType"><option value="">请选择作业类型</option></select>
+      </div>
+    </div>
+    </div>
+
+    <div class="step-pane hidden" id="pane-1">
+    <!-- ② 人员考勤（仅考勤类型=出勤时显示）：选择成员 + 考勤状态 + 角色 -->
+    <div class="card" id="personnelCard">
+      <div class="card-h">人员考勤</div>
+      <div class="field" id="roster">
+        <label>人员考勤<span class="req" data-req="roster">*</span><span class="opt">（默认勾选全部在册成员，可下拉添加其他成员；逐项设置考勤状态；内部班组叶片维修/技改需指定主修/辅修/辅助与开车）</span></label>
+        <div class="roster" id="rosterList"></div>
+        <select id="selAddMember" class="ros-add-sel"><option value="">＋ 添加其他成员（下拉选择）</option></select>
+        <div class="entry-empty" id="rosterEmpty" style="display:none;">该班组暂无在册成员。</div>
+      </div>
+    </div>
+    </div>
+
+    <div class="step-pane hidden" id="pane-2">
+    <!-- ③ 作业信息（仅考勤类型=出勤时填写）：产品编号(可单选可新增,多条) → 照片 -->
+    <div class="card" id="workCard">
+      <div class="card-h">作业信息<span class="opt">（仅考勤类型为「出勤」时出现）</span></div>
+
+      <div class="field" id="products">
+        <div class="entry-list" id="prodList"></div>
+        <button type="button" class="entry-add" id="btnAddProd">＋ 添加产品编号</button>
+      </div>
+      <datalist id="prodDatalist"></datalist>
+
+      <div class="field" id="photos">
+        <label>照片<span class="opt">（作业现场照片，可上传多张）</span></label>
+        <div class="upload" id="upPhotos">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#9aa7b2" stroke-width="2" stroke-linecap="round"/></svg>
+          点击上传照片
+        </div>
+        <input type="file" id="file-photos" accept="image/*" multiple hidden>
+        <div class="previews" id="photoPreviews"></div>
+        <div class="photo-count" id="photoCount"></div>
+      </div>
+    </div>
+    </div>
+
+    <div class="step-pane hidden" id="pane-3">
+    <!-- ④ 今日开销（仅自有班组显示）：独立模块 -->
+    <div class="card" id="costCard">
+      <div class="card-h">今日开销</div>
+      <div class="field" id="cost">
+        <label>今日开销<span class="opt">（选填 · 可添加多项，每项可附照片；外包班组无需填写）</span></label>
+        <div class="entry-list" id="costList"></div>
+        <button type="button" class="entry-add" id="btnAddCost">＋ 添加费用</button>
+        <div class="entry-sum" id="costSum" style="display:none;">
+          <span>合计</span><span class="sum-num" id="costSumNum"></span>
+        </div>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <div class="mp-foot">
+    <button class="btn-reset" type="button" id="btnReset">重置</button>
+    <button class="btn-prev hidden" type="button" id="btnPrev">上一步</button>
+    <button class="btn-next" type="button" id="btnNext">下一步</button>
+    <button class="btn-submit hidden" type="button" id="btnSubmit">提交日报</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-mask hidden" id="modalMask">
+  <div class="modal">
+    <div class="modal-h">提交成功 · 表单数据结构<span class="x" id="modalClose">×</span></div>
+    <div class="modal-b"><pre id="resultJson"></pre></div>
+    <div class="modal-f"><button type="button" id="btnCopy">复制 JSON</button></div>
+  </div>
+</div>
+
+<script>
+/* ============ 本地模拟数据 ============ */
+const MEMBERS = [
+  { id: 'm1', name: '张伟' }, { id: 'm2', name: '李强' }, { id: 'm3', name: '王磊' },
+  { id: 'm4', name: '赵敏' }, { id: 'm5', name: '孙浩' }, { id: 'm6', name: '周涛' },
+  { id: 'm7', name: '张建国' }, { id: 'm8', name: '李文' }, { id: 'm9', name: '王敏' },
+  { id: 'm10', name: '刘海' }, { id: 'm11', name: '杨帆' }, { id: 'm12', name: '陈刚' },
+  { id: 'm13', name: '郑凯' }, { id: 'm14', name: '赵鹏' }, { id: 'm15', name: '马涛' },
+  { id: 'm16', name: '许静' }, { id: 'm17', name: '高强' }, { id: 'm18', name: '林晓' }
+];
+const nameOf = id => (MEMBERS.find(m => m.id === id) || {}).name || id;
+
+/* 班组：type = own(自有) / outsource(外包)；自有班组可填标准人工天、需填今日开销 */
+const TEAMS = [
+  { type: 'own', code: 'BZ-2026-001', name: '张北运维一班', leader: 'm7', members: ['m7', 'm1', 'm2', 'm3'] },
+  { type: 'own', code: 'BZ-2026-002', name: '张北运维二班', leader: 'm8', members: ['m8', 'm4', 'm5', 'm6'] },
+  { type: 'own', code: 'BZ-2026-003', name: '锡林郭勒检修班', leader: 'm9', members: ['m9', 'm10', 'm11'] },
+  { type: 'outsource', code: 'WB-2026-001', name: '远海协作班组', leader: 'm12', members: ['m12', 'm13', 'm15', 'm16'] },
+  { type: 'outsource', code: 'WB-2026-002', name: '华东现场服务班组', leader: 'm14', members: ['m14', 'm17', 'm18'] }
+];
+const teamByCode = code => TEAMS.find(t => t.code === code) || null;
+const isOwnTeam = code => { const t = teamByCode(code); return !!(t && t.type === 'own'); };
+
+/* 产品编号 + 台账（含历史填写内容、干活前比例、累计已完成比例） */
+const PRODUCTS = ['WG-2026-0001', 'WG-2026-0002', 'WG-2026-0003',
+  'WG-2026-0004', 'WG-2026-0005', 'WG-2026-0006'];
+const PRODUCT_LEDGER = {
+  'WG-2026-0001': { stdDays: 3, cumRatio: 62, content: '完成 #3 风机叶片前缘检查与局部修复，记录前缘裂纹缺陷 2 处并补漆。' },
+  'WG-2026-0002': { stdDays: 5, cumRatio: 45, content: '主轴承润滑油路疏通，偏航电机绝缘检测，更换碳刷 4 件。' },
+  'WG-2026-0003': { stdDays: 2, cumRatio: 80, content: '变桨系统程序升级与校准，三叶片对零，变桨电池容量测试。' },
+  'WG-2026-0004': { stdDays: 4, cumRatio: 33, content: '塔筒内壁防腐涂层施工第一遍，螺栓力矩抽检 60%。' },
+  'WG-2026-0005': { stdDays: 1, cumRatio: 91, content: '齿轮箱油样采集送检，高速轴对中与振动测试。' },
+  'WG-2026-0006': { stdDays: 6, cumRatio: 20, content: '叶片后缘结构补强铺层，待固化后打磨。' }
+};
+
+/* 考勤类型：固定 5 项 */
+const ATT_TYPES = ['出勤', '转场', '入场等待', '场内等待', '培训'];
+/* 人员考勤状态：出勤为默认；含转场/入场等待/场内等待/请假/休假/培训/旷工 */
+const ATT_STATUS = ['出勤', '转场', '入场等待', '场内等待', '请假', '休假', '培训', '旷工'];
+/* 人员角色：主修/辅修/辅助 三选一互斥；开车 可叠加（仅内部班组做叶片维修/叶片技改时填写） */
+const ROLE_KINDS = ['主修', '辅修', '辅助'];
+const ROLE_DRIVE = '开车';
+
+/* 作业类型：下拉 5 项 */
+const JOB_TYPES = [
+  { v: 'mainMaintain', t: '主机运维' },
+  { v: 'mainInspect',  t: '主机巡检' },
+  { v: 'bladeInspect', t: '叶片巡检' },
+  { v: 'bladeRepair',  t: '叶片维修' },
+  { v: 'bladeUpgrade', t: '叶片技改' }
+];
+const JOB_NAME = {}; JOB_TYPES.forEach(x => { JOB_NAME[x.v] = x.t; });
+
+/* 项目台账 */
+const PROJECTS = [
+  { code: 'PRJ-2026-001', name: '张北坝上风电场运维项目', customer: '华能河北', desc: '张北坝上 200MW 风电场整机运维，含 60 台机组定检、叶片维修与备件保障', start: '2026-03-01', end: '2027-02-28', done: 62 },
+  { code: 'PRJ-2026-002', name: '锡林郭勒风电场技改项目', customer: '国电投蒙东', desc: '锡林郭勒 3 个风场变桨系统与偏航系统技改，共 48 台机组', start: '2026-05-10', end: '2026-12-31', done: 78 },
+  { code: 'PRJ-2026-003', name: '乌兰察布叶片维修项目', customer: '大唐蒙西', desc: '乌兰察布 4 个风场叶片前缘/后缘修复与涂层养护，累计 120 支', start: '2026-06-01', end: '2026-11-30', done: 55 },
+  { code: 'PRJ-2026-004', name: '盐城海上风电运维项目', customer: '三峡江苏', desc: '盐城大丰海上风电场运维，含塔筒清洗、螺栓力矩复核与防腐维护', start: '2026-01-15', end: '2026-12-31', done: 84 },
+  { code: 'PRJ-2026-005', name: '酒泉风电基地定检项目', customer: '华电甘肃', desc: '酒泉风电基地 5 个场站年度定检，含齿轮箱油位、偏航与电缆检查', start: '2026-08-01', end: '2027-06-30', done: 28 }
+];
+
+const WEATHER = ['晴', '多云', '阴', '小雨', '大雨', '雪', '大风'];
+
+/* 费用类型枚举（今日开销）：「其他费用」固定在最后 */
+const COST_TYPES = ['办公费', '差旅费', '机物料', '加邮费', '考证费', '劳保用品', '快递费',
+  '福利费', '招待费', '租赁费', '运输费', '住宿费', '返乡差旅费', '返场差旅费', '其他费用'];
+
+/* ============ 通用工具 ============ */
+const $ = id => document.getElementById(id);
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function show(id, vis) { const el = $(id); if (el) el.classList.toggle('hidden', !vis); }
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 1800);
+}
+const padNum = n => String(n).padStart(2, '0');
+const dateKey = (d = new Date()) => `${d.getFullYear()}-${padNum(d.getMonth() + 1)}-${padNum(d.getDate())}`;
+
+/* ============ 历史日报存储（localStorage） ============ */
+const STORE_KEY = 'dr_simple_reports';
+function loadReports() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); } catch (e) { return []; }
+}
+function saveReport(rec) {
+  let arr = loadReports();
+  arr.push(rec);
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(arr)); }
+  catch (e) { /* 配额溢出（多为照片 dataURL），忽略存储但不阻断提交 */ }
+}
+
+/* ============ 演示种子数据（仅本地存储为空时注入，不覆盖真实提交） ============ */
+function seedDemoReports() {
+  if (loadReports().length > 0) return;
+  const dAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return dateKey(d); };
+  const tAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return d.getTime(); };
+  const mem = (id, roleKind, drive, att) => ({ memberId: id, att: att || '出勤', roleKind: roleKind || '主修', drive: !!drive });
+  const prod = (no, content, stdDays, before, today, exist) => ({
+    prod: no, content, stdDays: (stdDays === null || stdDays === undefined) ? '' : stdDays,
+    beforeRatio: exist ? before : '', todayRatio: String(today),
+    cumRatio: exist ? before + today : '', isExisting: !!exist, projCode: ''
+  });
+  const DEMO = [
+    // ① 张北运维一班 + 张北坝上（昨天）：出勤·叶片维修，含角色与开销
+    {
+      savedAt: tAgo(1), teamCode: 'BZ-2026-001', projectCode: 'PRJ-2026-001', date: dAgo(1),
+      attType: '出勤', weather: '', jobType: 'bladeRepair',
+      members: [mem('m7', '主修', true), mem('m1', '辅修'), mem('m2', '辅助'), mem('m3', '辅修')],
+      products: [
+        prod('WG-2026-0001', '完成 #3 风机叶片前缘检查与局部修复，记录前缘裂纹缺陷 2 处并补漆。', 3, 58, 4, true),
+        prod('WG-2026-0006', '叶片后缘结构补强铺层，待固化后打磨。', 6, 18, 2, true)
+      ],
+      costItems: [{ type: '加邮费', amount: '850', photo: '' }, { type: '劳保用品', amount: '320', photo: '' }],
+      photos: []
+    },
+    // ② 张北运维一班 + 张北坝上（前天）：同一组合更早一份，演示「取最近一份」
+    {
+      savedAt: tAgo(2), teamCode: 'BZ-2026-001', projectCode: 'PRJ-2026-001', date: dAgo(2),
+      attType: '出勤', weather: '', jobType: 'bladeRepair',
+      members: [mem('m7', '主修', true), mem('m1', '辅修'), mem('m2', '辅助'), mem('m3', '辅修')],
+      products: [
+        prod('WG-2026-0001', '完成 #3 风机叶片前缘检查与局部修复，记录前缘裂纹缺陷 2 处并补漆。', 3, 52, 6, true),
+        prod('WG-2026-0006', '叶片后缘结构补强铺层，待固化后打磨。', 6, 16, 2, true)
+      ],
+      costItems: [{ type: '加邮费', amount: '760', photo: '' }],
+      photos: []
+    },
+    // ③ 张北运维二班 + 锡林郭勒技改（昨天）：出勤·叶片技改
+    {
+      savedAt: tAgo(1) - 3600e3, teamCode: 'BZ-2026-002', projectCode: 'PRJ-2026-002', date: dAgo(1),
+      attType: '出勤', weather: '', jobType: 'bladeUpgrade',
+      members: [mem('m8', '主修'), mem('m4', '辅修'), mem('m5', '辅助'), mem('m6', '主修', true)],
+      products: [prod('WG-2026-0003', '变桨系统程序升级与校准，三叶片对零，变桨电池容量测试。', 2, 76, 4, true)],
+      costItems: [{ type: '机物料', amount: '1200', photo: '' }, { type: '差旅费', amount: '600', photo: '' }],
+      photos: []
+    },
+    // ④ 远海协作班组（外包）+ 乌兰察布叶片维修（前天）：无角色列、无开销
+    {
+      savedAt: tAgo(2) - 3600e3, teamCode: 'WB-2026-001', projectCode: 'PRJ-2026-003', date: dAgo(2),
+      attType: '出勤', weather: '', jobType: 'bladeRepair',
+      members: [mem('m12'), mem('m13'), mem('m15'), mem('m16')],
+      products: [prod('WG-2026-0004', '塔筒内壁防腐涂层施工第一遍，螺栓力矩抽检 60%。', null, 30, 3, true)],
+      costItems: [],
+      photos: []
+    },
+    // ⑤ 锡林郭勒检修班 + 锡林郭勒技改（3 天前）：场内等待，演示非出勤导入
+    {
+      savedAt: tAgo(3), teamCode: 'BZ-2026-003', projectCode: 'PRJ-2026-002', date: dAgo(3),
+      attType: '场内等待', weather: '大风', jobType: '',
+      members: [], products: [], costItems: [], photos: []
+    }
+  ];
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(DEMO)); } catch (e) { /* 忽略 */ }
+}
+
+/* ============ 状态 ============ */
+const state = {
+  date: dateKey(),
+  teamCode: '',
+  projectCode: '',
+  attType: '',        // 考勤类型
+  weather: '',
+  waitDesc: '',        // 场内等待 · 具体情况说明
+  jobType: '',
+  members: [],        // 人员考勤花名册：[{ memberId, att:'出勤', roleKind:'主修', drive:false }]
+  products: [],       // [{ id, prod, content, stdDays, beforeRatio, todayRatio, cumRatio, isExisting, projCode }]
+  costItems: [],      // [{ id, type, amount, photo }]
+  photos: []          // 作业照片 dataURL 列表
+};
+let pidSeq = 0;
+const newPid = () => 'p' + (++pidSeq);
+
+/* ============ 初始化 ============ */
+function init() {
+  seedDemoReports();
+  $('in-date').value = state.date;
+  renderWeekday();
+
+  $('sel-team').innerHTML = '<option value="">请选择班组</option>' +
+    TEAMS.map(t => `<option value="${t.code}">${esc(t.name)}（${t.type === 'own' ? '自有' : '外包'} · ${esc(nameOf(t.leader))}）</option>`).join('');
+
+  $('sel-attType').innerHTML = '<option value="">请选择考勤类型</option>' +
+    ATT_TYPES.map(a => `<option value="${a}">${a}</option>`).join('');
+  $('sel-jobType').innerHTML = '<option value="">请选择作业类型</option>' +
+    JOB_TYPES.map(j => `<option value="${j.v}">${j.t}</option>`).join('');
+  $('sel-weather').innerHTML = '<option value="">请选择天气</option>' + WEATHER.map(w => `<option value="${w}">${w}</option>`).join('');
+
+  $('prodDatalist').innerHTML = PRODUCTS.map(p => `<option value="${p}"></option>`).join('');
+
+  renderAttType();
+  renderJobType();
+  renderWeather();
+  renderRoster();
+  renderProducts();
+  renderCosts();
+  renderPhotos();
+  refreshVisibility();
+  renderModNav();
+  refreshImportBar();
+
+  $('in-date').addEventListener('change', () => { state.date = $('in-date').value || dateKey(); renderWeekday(); refreshModDone(); });
+  $('sel-team').addEventListener('change', onTeamChange);
+  $('in-project').addEventListener('focus', () => renderProjectList($('in-project').value));
+  $('in-project').addEventListener('input', () => renderProjectList($('in-project').value));
+  $('projectList').addEventListener('click', e => {
+    const opt = e.target.closest('.cb-opt'); if (!opt) return;
+    pickProject(opt.dataset.code);
+  });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#projectCb')) $('projectList').classList.add('hidden');
+  });
+  $('sel-attType').addEventListener('change', onAttTypeChange);
+  $('sel-jobType').addEventListener('change', onJobTypeChange);
+  $('selAddMember').addEventListener('change', onAddMember);
+  $('sel-weather').addEventListener('change', () => { state.weather = $('sel-weather').value; refreshModDone(); });
+  $('in-waitDesc').addEventListener('input', e => { state.waitDesc = e.target.value; refreshModDone(); });
+
+  $('btnAddProd').addEventListener('click', addProduct);
+  $('prodList').addEventListener('input', onProdInput);
+  $('prodList').addEventListener('change', onProdChange);
+  $('prodList').addEventListener('click', e => {
+    const tg = e.target.closest('.prod-toggle'); if (tg) {
+      const id = tg.dataset.toggle; const it = state.products.find(p => p.id === id);
+      if (it) { it.collapsed = !it.collapsed; renderProducts(); }
+      return;
+    }
+    const rm = e.target.closest('.rm'); if (rm) {
+      const id = rm.dataset.id; state.products = state.products.filter(p => p.id !== id);
+      renderProducts(); refreshModDone(); return;
+    }
+    const it = e.target.closest('[data-id]'); if (!it) return;
+    const id = it.dataset.id;
+    const item = state.products.find(p => p.id === id); if (!item) return;
+    if (e.target.classList.contains('wi-edit-btn')) {
+      item._contentBackup = item.content;   // 进入编辑前先备份，便于取消
+      item.editingContent = true;
+      renderProducts();
+    } else if (e.target.classList.contains('wi-edit-cancel')) {
+      item.content = (item._contentBackup !== undefined) ? item._contentBackup : item.content;
+      item.editingContent = false;
+      renderProducts();
+    } else if (e.target.classList.contains('wi-edit-confirm')) {
+      item.editingContent = false;
+      item.contentAdjusted = true;      // 确认调整 → 标记已调整，累计后展示提示、不再计算今日
+      renderDailyValue(id); refreshModDone();
+      renderProducts();
+    }
+  });
+
+  $('upPhotos').addEventListener('click', () => $('file-photos').click());
+  $('file-photos').addEventListener('change', onPhotosPicked);
+  $('photoPreviews').addEventListener('click', e => {
+    const d = e.target.closest('.del'); if (!d) return;
+    const i = Number(d.dataset.i); state.photos.splice(i, 1); renderPhotos();
+  });
+
+  $('btnAddCost').addEventListener('click', () => { state.costItems.push({ id: newPid(), type: '', amount: '', photo: '', remark: '' }); renderCosts(); });
+  $('costList').addEventListener('input', onCostInput);
+  $('costList').addEventListener('change', onCostChange);
+  $('costList').addEventListener('click', e => {
+    const rm = e.target.closest('.rm'); if (rm) {
+      const id = rm.dataset.id; state.costItems = state.costItems.filter(c => c.id !== id); renderCosts(); return;
+    }
+    const up = e.target.closest('.ts-up'); if (up) { const id = up.dataset.id; const inp = $('costFile-' + id); if (inp) inp.click(); return; }
+    const del = e.target.closest('.cf-del'); if (del) {
+      const id = del.dataset.id; const it = state.costItems.find(c => c.id === id); if (it) { it.photo = ''; renderCosts(); } return;
+    }
+  });
+  $('costList').addEventListener('change', onCostFilePicked);
+
+  $('btnReset').addEventListener('click', resetForm);
+  $('btnSubmit').addEventListener('click', submitForm);
+  $('btnPrev').addEventListener('click', () => goStep(prevEnabledIdx(curStep)));
+  $('btnNext').addEventListener('click', () => goStep(nextEnabledIdx(curStep)));
+  $('btnImportLast').addEventListener('click', importLastReport);
+  $('modalClose').addEventListener('click', () => show('modalMask', false));
+  $('modalMask').addEventListener('click', e => { if (e.target.id === 'modalMask') show('modalMask', false); });
+  $('btnCopy').addEventListener('click', copyJson);
+}
+
+/* ============ 基础信息渲染 ============ */
+function renderAttType() { $('sel-attType').value = state.attType; }
+function renderJobType() { $('sel-jobType').value = state.jobType; }
+function renderWeather() { $('sel-weather').value = state.weather; }
+
+// 工作日期后展示星期几
+const WEEK_CN = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+function renderWeekday() {
+  const el = $('weekday'); if (!el) return;
+  const d = $('in-date').value; // YYYY-MM-DD
+  if (!d) { el.textContent = ''; return; }
+  const dt = new Date(d + (d.indexOf('T') === -1 ? 'T00:00:00' : ''));
+  if (isNaN(dt.getTime())) { el.textContent = ''; return; }
+  el.textContent = '（' + WEEK_CN[dt.getDay()] + '）';
+}
+
+function onAttTypeChange() {
+  state.attType = $('sel-attType').value;
+  const hint = $('attTypeHint');
+  if (state.attType === '出勤') {
+    hint.innerHTML = '出勤状态：需选 <b>作业类型</b>、填写 <b>人员考勤</b> 与 <b>作业信息</b>。';
+    if (state.members.length === 0) {
+      const t = teamByCode(state.teamCode);
+      if (t) { state.members = t.members.map(id => ({ memberId: id, att: '出勤', roleKind: '主修', drive: false })); }
+    }
+  } else if (state.attType === '场内等待') {
+    hint.innerHTML = '场内等待状态：需填写 <b>天气情况</b> 与 <b>具体情况说明</b>。';
+    state.members = [];
+    state.products = []; state.photos = [];
+  } else {
+    hint.innerHTML = state.attType ? '非出勤状态，无需填写作业类型、人员考勤与作业信息。' : '';
+    state.members = [];
+    state.products = []; state.photos = [];
+    state.waitDesc = ''; $('in-waitDesc').value = '';
+  }
+  show('waitDesc', state.attType === '场内等待');
+  renderRoster();
+  refreshVisibility();
+  refreshModDone();
+}
+
+function onJobTypeChange() {
+  state.jobType = $('sel-jobType').value;
+  renderRoster();   // 切换角色列显隐（内部班组叶片维修/技改才需指定角色）
+  refreshVisibility();
+  refreshModDone();
+}
+
+function onTeamChange() {
+  state.teamCode = $('sel-team').value;
+  const t = teamByCode(state.teamCode);
+  $('teamHint').innerHTML = t
+    ? `班组长：<b>${esc(nameOf(t.leader))}</b> · 在册 <b>${t.members.length}</b> 人：${t.members.map(id => esc(nameOf(id))).join('、')}${t.type === 'own' ? '（自有班组，可填标准人工天与今日开销）' : '（外包班组，不填标准人工天与今日开销）'}`
+    : '请选择班组';
+  if (state.attType === '出勤' && t) {
+    const ids = new Set(t.members);
+    state.members = state.members.filter(m => ids.has(m.memberId));
+    if (state.members.length === 0) state.members = t.members.map(id => ({ memberId: id, att: '出勤', roleKind: '主修', drive: false }));
+  }
+  renderRoster();
+  renderProducts(); // 重新渲染以切换 标准人工天 显隐
+  refreshVisibility();
+  if (state.teamCode && state.projectCode) loadLastReport(state.teamCode, state.projectCode);
+  refreshImportBar();
+  refreshModDone();
+}
+
+function renderProjectList(filter) {
+  const kw = (filter || '').trim().toLowerCase();
+  const list = $('projectList');
+  const matched = PROJECTS.filter(p => !kw || p.name.toLowerCase().includes(kw) || p.code.toLowerCase().includes(kw));
+  if (matched.length === 0) { list.innerHTML = '<div class="cb-empty">无匹配项目</div>'; }
+  else list.innerHTML = matched.map(p => `<div class="cb-opt" data-code="${p.code}">${esc(p.name)}<span class="cb-code">${esc(p.code)}</span></div>`).join('');
+  list.classList.remove('hidden');
+}
+function pickProject(code) {
+  const p = PROJECTS.find(x => x.code === code); if (!p) return;
+  state.projectCode = p.code;
+  $('in-project').value = p.name;
+  $('projectList').classList.add('hidden');
+  state.products.forEach(it => { if (!it.projCode) it.projCode = p.code; });
+  if (state.teamCode && state.projectCode) loadLastReport(state.teamCode, state.projectCode);
+  refreshImportBar();
+  refreshModDone();
+}
+
+function loadLastReport(teamCode, projectCode) {
+  const arr = loadReports();
+  const matched = arr.filter(r => r.teamCode === teamCode && r.projectCode === projectCode);
+  if (matched.length === 0) return;
+  matched.sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
+  const rec = matched[0];
+
+  // 日期保持为当天（新增日报），其余字段带入
+  state.attType = rec.attType || '';
+  state.weather = rec.weather || '';
+  state.waitDesc = rec.waitDesc || '';
+  state.jobType = rec.jobType || '';
+  state.members = Array.isArray(rec.members) ? rec.members.map(m => ({ memberId: m.memberId, att: m.att || '出勤', roleKind: m.roleKind || '主修', drive: !!m.drive })) : [];
+  state.products = (rec.products || []).map((p, idx) => {
+    const beforeRatio = (p.beforeRatio === null || p.beforeRatio === undefined) ? '' : p.beforeRatio;
+    const cumRatio = (p.cumRatio === null || p.cumRatio === undefined) ? '' : p.cumRatio;
+    const isExisting = !!p.isExisting;
+    // 今日完成比例统一由 累计 − 历史 反推，保证模型一致
+    const c = parseFloat(cumRatio), b = parseFloat(beforeRatio);
+    const todayRatio = isNaN(c) ? '' : String(+(c - (isNaN(b) ? 0 : b)).toFixed(2));
+    return {
+      id: newPid(), prod: p.prod || '', content: p.content || '',
+      stdDays: (p.stdDays === null || p.stdDays === undefined) ? '' : p.stdDays,
+      beforeRatio: beforeRatio, todayRatio: todayRatio, cumRatio: cumRatio,
+      isExisting: isExisting, editingContent: false, contentAdjusted: !!p.contentAdjusted,
+      collapsed: idx > 0,
+      projCode: p.projCode || projectCode
+    };
+  });
+  state.costItems = (rec.costItems || []).map(c => ({ id: newPid(), type: c.type || '', amount: (c.amount === null || c.amount === undefined) ? '' : c.amount, photo: c.photo || '', remark: c.remark || '' }));
+  state.photos = Array.isArray(rec.photos) ? rec.photos.slice() : [];
+
+  // 回填 UI
+  renderAttType();
+  renderJobType();
+  renderWeather();
+  $('in-waitDesc').value = state.waitDesc;
+  show('waitDesc', state.attType === '场内等待');
+  renderRoster();
+  renderProducts();
+  renderCosts();
+  renderPhotos();
+  refreshVisibility();
+  refreshModDone();
+}
+
+/* ============ 快速导入上次日报 ============ */
+/* 仅当所选班组 + 所选项目组合存在历史日报时才出现导入按钮 */
+function lastReportCandidate() {
+  if (!state.teamCode || !state.projectCode) return null;
+  const arr = loadReports().filter(r => r.teamCode === state.teamCode && r.projectCode === state.projectCode);
+  if (arr.length === 0) return null;
+  arr.sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
+  return arr[0];
+}
+function refreshImportBar() {
+  const bar = $('importBar');
+  const btn = $('btnImportLast');
+  const hint = $('importHint');
+  if (!state.teamCode || !state.projectCode) { bar.style.display = 'none'; return; }
+  // 选齐班组+项目即显示按钮条：有历史可导入；无历史按钮置灰并说明原因，避免用户猜不出哪些组合能用
+  const rec = lastReportCandidate();
+  bar.style.display = '';
+  if (rec) {
+    btn.disabled = false;
+    const t = teamByCode(rec.teamCode);
+    const p = PROJECTS.find(x => x.code === rec.projectCode);
+    hint.textContent = '上次：' + (t ? t.name : rec.teamCode) + ' · ' + (p ? p.name : rec.projectCode) + ' · ' + (rec.date || '');
+  } else {
+    btn.disabled = true;
+    hint.textContent = '该班组在此项目暂无历史日报，无法导入';
+  }
+}
+function importLastReport() {
+  const rec = lastReportCandidate(); if (!rec) return;
+  state.teamCode = rec.teamCode;
+  $('sel-team').value = rec.teamCode;
+  const p = PROJECTS.find(x => x.code === rec.projectCode);
+  if (p) { state.projectCode = p.code; $('in-project').value = p.name; }
+  onTeamChange(); // 班组+项目选齐后内部自动 loadLastReport 带入
+  if (!(state.teamCode && state.projectCode)) loadLastReport(rec.teamCode, rec.projectCode);
+  refreshImportBar();
+}
+
+/* ============ 人员考勤花名册 ============ */
+/* 角色列仅当：内部(自有)班组 + 出勤 + 作业类型∈{叶片维修,叶片技改} 时显示 */
+function roleNeeded() {
+  return isOwnTeam(state.teamCode) && state.attType === '出勤'
+    && (state.jobType === 'bladeRepair' || state.jobType === 'bladeUpgrade');
+}
+function renderRoster() {
+  const t = teamByCode(state.teamCode);
+  const list = $('rosterList');
+  const empty = $('rosterEmpty');
+  const needRole = roleNeeded();
+  if (!t || t.members.length === 0) {
+    list.innerHTML = '';
+    empty.style.display = '';
+    renderAddMember();
+    return;
+  }
+  empty.style.display = 'none';
+  const selected = new Set(state.members.map(m => m.memberId));
+  // 展示：在册成员（默认勾选）＋ 额外添加的成员
+  const ids = t.members.slice();
+  state.members.forEach(m => { if (!ids.includes(m.memberId)) ids.push(m.memberId); });
+  list.innerHTML = ids.map(id => {
+    const inc = selected.has(id);
+    const m = state.members.find(x => x.memberId === id) || { att: '出勤', roleKind: '主修', drive: false };
+    const roleCell = needRole
+      ? `<span class="ros-role"><select class="ros-kind-sel" data-mid="${id}">
+           ${ROLE_KINDS.map(r => `<option value="${r}"${r === m.roleKind ? ' selected' : ''}>${r}</option>`).join('')}
+         </select><label class="ros-drive"><input type="checkbox" class="ros-drive-chk" data-mid="${id}" ${m.drive ? 'checked' : ''}>开车</label></span>`
+      : '';
+    return `<div class="ros-row" data-mid="${id}">
+      <input type="checkbox" class="ros-chk" data-mid="${id}" ${inc ? 'checked' : ''}>
+      <span class="ros-name">${esc(nameOf(id))}</span>
+      <span class="ros-att"><select class="ros-att-sel" data-mid="${id}" ${inc ? '' : 'disabled'}>
+        ${ATT_STATUS.map(s => `<option value="${s}"${s === m.att ? ' selected' : ''}>${s}</option>`).join('')}
+      </select></span>
+      ${roleCell}
+    </div>`;
+  }).join('');
+  renderAddMember();
+}
+/* 下拉添加其他成员（默认已展示在册成员，可额外添加非在册成员） */
+function renderAddMember() {
+  const sel = $('selAddMember'); if (!sel) return;
+  const added = new Set(state.members.map(m => m.memberId));
+  const pool = MEMBERS.filter(m => !added.has(m.id));
+  sel.innerHTML = '<option value="">＋ 添加其他成员（下拉选择）</option>' +
+    pool.map(m => `<option value="${m.id}">${esc(m.name)}（${esc(m.id)}）</option>`).join('');
+  sel.disabled = pool.length === 0;
+}
+function onAddMember() {
+  const sel = $('selAddMember'); if (!sel) return;
+  const id = sel.value; if (!id) return;
+  if (!state.members.find(m => m.memberId === id)) {
+    state.members.push({ memberId: id, att: '出勤', roleKind: '主修', drive: false });
+    renderRoster(); refreshModDone();
+  }
+  sel.value = '';
+}
+function onRosterClick(e) {
+  const chk = e.target.closest('.ros-chk');
+  const t = teamByCode(state.teamCode); if (!t) return;
+  if (chk) {
+    const id = chk.dataset.mid;
+    if (chk.checked) {
+      if (!state.members.find(m => m.memberId === id)) state.members.push({ memberId: id, att: '出勤', roleKind: '主修', drive: false });
+    } else {
+      state.members = state.members.filter(m => m.memberId !== id);
+    }
+    renderRoster(); refreshModDone(); return;
+  }
+  const as = e.target.closest('.ros-att-sel');
+  if (as) { const id = as.dataset.mid; const m = state.members.find(x => x.memberId === id); if (m) m.att = as.value; refreshModDone(); return; }
+  const ks = e.target.closest('.ros-kind-sel');
+  if (ks) { const id = ks.dataset.mid; const m = state.members.find(x => x.memberId === id); if (m) m.roleKind = ks.value; refreshModDone(); return; }
+  const dc = e.target.closest('.ros-drive-chk');
+  if (dc) { const id = dc.dataset.mid; const m = state.members.find(x => x.memberId === id); if (m) m.drive = dc.checked; refreshModDone(); }
+}
+$('rosterList').addEventListener('change', onRosterClick);
+$('rosterEmpty') && $('rosterEmpty').addEventListener('change', onRosterClick);
+
+/* ============ 产品编号 ============ */
+function addProduct() {
+  const first = state.products[0];
+  const item = { id: newPid(), prod: '', content: '', stdDays: '', beforeRatio: '', todayRatio: '', cumRatio: '', isExisting: false, editingContent: false, contentAdjusted: false, collapsed: false, projCode: state.projectCode };
+  // 一次专注填一条：新增时折叠其他行
+  state.products.forEach(p => { p.collapsed = true; });
+  if (first) {
+    // 自动复制第一条产品编号已填写的内容（不含编号本身；新编号无历史，不复制比例）
+    item.content = first.content || '';
+    item.stdDays = first.stdDays === '' ? '' : first.stdDays;
+  }
+  state.products.push(item);
+  renderProducts(); refreshModDone();
+}
+function applyLedgerToRow(id) {
+  const it = state.products.find(p => p.id === id); if (!it) return;
+  const led = PRODUCT_LEDGER[it.prod]; if (!led) return;
+  // 选择已有产品编号：历史已完工比例 = 台账上次累计；班组长填写「累计完工比例」；今日 = 累计 − 历史
+  it.isExisting = true;
+  it.content = led.content || '';
+  it.beforeRatio = led.cumRatio === undefined ? 0 : led.cumRatio;
+  it.cumRatio = it.beforeRatio;          // 默认带出历史累计，班组长在此基础上修改
+  it.todayRatio = '0';                   // 初始累计=历史 → 今日=0
+  it.stdDays = isOwnTeam(state.teamCode) ? led.stdDays : '';
+  it.editingContent = false;             // 工作内容以只读展示 + 「调整」按钮
+  it.contentAdjusted = false;            // 重新选择台账编号 → 视为未调整
+  renderProducts(); // 重建以显隐历史/累计区块
+}
+// 今日完成比例 = 累计完工比例 − 历史已完工比例（新增编号历史为 0，故今日=累计）
+function deriveToday(it) {
+  const c = parseFloat(it.cumRatio);
+  if (isNaN(c)) return '';
+  const b = parseFloat(it.beforeRatio);
+  const base = isNaN(b) ? 0 : b;
+  return +(c - base).toFixed(2);
+}
+function onProdInput(e) {
+  const t = e.target; const id = t.dataset.id; if (!id) return;
+  const it = state.products.find(p => p.id === id); if (!it) return;
+  if (t.classList.contains('wi-prod')) { it.prod = t.value.trim(); it.projCode = it.projCode || state.projectCode; updateProdSummary(id); }
+  else if (t.classList.contains('wi-content')) it.content = t.value;
+  else if (t.classList.contains('wi-std-input')) it.stdDays = t.value;
+  else if (t.classList.contains('wi-cum-input')) {
+    // 班组长直接填写「累计完工比例」
+    it.cumRatio = t.value;
+    updateProdSummary(id);
+    if (!it.contentAdjusted) {
+      // 工作内容未调整：今日完成比例 = 累计 − 历史（反推，只读展示）
+      const today = deriveToday(it);
+      it.todayRatio = (today === '' || today == null) ? '' : String(today);
+      const elToday = document.querySelector('.wi-today[data-id="' + id + '"]');
+      if (elToday) elToday.value = (today === '' || today == null) ? '' : today;
+      const elErr = document.querySelector('.wi-cum-err[data-id="' + id + '"]');
+      if (elErr) {
+        const c = parseFloat(it.cumRatio); const b = parseFloat(it.beforeRatio);
+        const base = isNaN(b) ? 0 : b;
+        const bad = (!isNaN(c) && (c > 100 || c < base));
+        elErr.style.display = bad ? '' : 'none';
+      }
+    } else {
+      // 工作内容已调整：今日完成比例不再计算（由累计直接体现进度）
+      it.todayRatio = '';
+    }
+    renderDailyValue(id); // 今日比例变化 → 实时重算当日产值
+  }
+  refreshModDone();
+}
+/* 折叠卡片摘要行实时刷新（不重渲染，避免丢失输入焦点） */
+function updateProdSummary(id) {
+  const it = state.products.find(p => p.id === id); if (!it) return;
+  const meta = document.querySelector('.prod-row[data-id="' + id + '"] .ps-meta');
+  if (meta) meta.textContent = it.cumRatio === '' ? '累计 —' : '累计 ' + it.cumRatio + '%';
+}
+function onProdChange(e) {
+  const t = e.target; const id = t.dataset.id; if (!id || !t.classList.contains('wi-prod')) return;
+  const it = state.products.find(p => p.id === id); if (!it) return;
+  const newProd = t.value.trim();
+  it.prod = newProd;
+  const led = PRODUCT_LEDGER[newProd];
+  if (led) {
+    // 选择已有产品编号：自动展示历史已完工比例，今日重新填写，累计自动计算
+    applyLedgerToRow(id);
+  } else {
+    // 新增（不存在历史）产品编号：只填累计完工比例，无历史
+    it.isExisting = false;
+    it.content = ''; it.stdDays = ''; it.beforeRatio = ''; it.todayRatio = ''; it.cumRatio = ''; it.editingContent = false; it.contentAdjusted = false;
+    renderProducts();
+  }
+  refreshModDone();
+}
+function renderProducts() {
+  const own = isOwnTeam(state.teamCode);
+  const list = $('prodList');
+  if (state.products.length === 0) {
+    list.innerHTML = '<div class="entry-empty">尚未添加产品编号，点击下方「＋ 添加产品编号」开始填写。</div>';
+    return;
+  }
+  list.innerHTML = state.products.map((it, i) => `
+    <div class="prod-row ${it.collapsed ? 'collapsed' : ''}" data-id="${it.id}">
+      <div class="prod-head">
+        <input type="text" list="prodDatalist" class="wi-prod" data-id="${it.id}" value="${esc(it.prod)}" placeholder="选择已有或输入新增编号（如 WG-2026-0007）">
+        <span class="ps-meta">${it.cumRatio === '' ? '累计 —' : '累计 ' + esc(String(it.cumRatio)) + '%'}</span>
+        <button type="button" class="rm" data-id="${it.id}" aria-label="删除">×</button>
+        <button type="button" class="prod-toggle" data-toggle="${it.id}" aria-label="展开或收起">${it.collapsed ? '▸' : '▾'}</button>
+      </div>
+      <div class="prod-body">
+      ${it.isExisting ? `
+      <div class="wi-field">
+        <div class="wi-label-row">
+          <label>工作内容</label>
+          <button type="button" class="wi-edit-btn" data-id="${it.id}">调整</button>
+        </div>
+        ${it.editingContent ? `
+        <textarea class="wi-content" data-id="${it.id}" placeholder="请填写该产品的具体工作内容">${esc(it.content)}</textarea>
+        <div class="wi-edit-actions">
+          <button type="button" class="wi-edit-cancel" data-id="${it.id}">取消</button>
+          <button type="button" class="wi-edit-confirm" data-id="${it.id}">确认调整</button>
+        </div>` : `
+        <div class="wi-content-view">${esc(it.content) || '<span class="muted">（未填写）</span>'}</div>`}
+      </div>` : `
+      <div class="wi-field">
+        <label>工作内容</label>
+        <textarea class="wi-content" data-id="${it.id}" placeholder="请填写该产品的具体工作内容">${esc(it.content)}</textarea>
+      </div>`}
+      ${own ? (it.isExisting ? `<div class="wi-field wi-std">
+        <label>标准人工天（天）<span class="opt">（参考）</span></label>
+        <input type="number" class="wi-std-input" data-id="${it.id}" value="${it.stdDays === '' ? '' : it.stdDays}" disabled>
+      </div>` : `<div class="wi-field wi-std">
+        <label>标准人工天（天）<span class="req">*</span></label>
+        <input type="number" min="0" step="0.5" class="wi-std-input" data-id="${it.id}" value="${it.stdDays === '' ? '' : it.stdDays}" placeholder="如 3">
+      </div>`) : ''}
+      ${it.isExisting ? `
+      <div class="wi-field">
+        <label class="wi-cum-label">累计完工比例（%）<span class="req">*</span>${it.contentAdjusted ? '<span class="wi-adj-hint-inline">按照调整后的内容填写累计完工比例即可。</span>' : ''}</label>
+        <input type="number" min="0" max="100" class="wi-cum-input" data-id="${it.id}" value="${it.cumRatio === '' ? '' : it.cumRatio}" placeholder="累计">
+      </div>
+      ${it.contentAdjusted ? `
+      <div class="wi-ratio-line">
+        <div class="wi-field">
+          <label>历史已完工比例（%）<span class="wi-before-tag">调整前</span></label>
+          <input type="number" class="wi-before" data-id="${it.id}" value="${it.beforeRatio === '' ? '' : it.beforeRatio}" disabled placeholder="历史累计">
+        </div>
+      </div>
+      ` : `
+      <div class="wi-ratio-line">
+        <div class="wi-field">
+          <label>历史已完工比例（%）</label>
+          <input type="number" class="wi-before" data-id="${it.id}" value="${it.beforeRatio === '' ? '' : it.beforeRatio}" disabled placeholder="历史累计">
+        </div>
+        <div class="wi-field">
+          <label>今日完成比例（%）</label>
+          <input type="number" class="wi-today" data-id="${it.id}" value="${it.todayRatio === '' ? '' : it.todayRatio}" disabled placeholder="自动计算（累计−历史）">
+        </div>
+      </div>
+      `}
+      <div class="wi-cum-err" data-id="${it.id}" style="display:none;color:#e23b3b;font-size:12px;margin-top:4px;">${it.contentAdjusted ? '累计完工比例不能超过 100%' : '累计完工比例需在历史与 100% 之间（今日完成比例不能为负）'}</div>
+      ` : `
+      <div class="wi-field">
+        <label class="wi-cum-label">累计完工比例（%）<span class="req">*</span></label>
+        <input type="number" min="0" max="100" class="wi-cum-input" data-id="${it.id}" value="${it.cumRatio === '' ? '' : it.cumRatio}" placeholder="累计（即今日）">
+      </div>
+      `}
+      <div class="wi-field">
+        <div class="prod-add-proj">${it.projCode ? '关联项目：' + esc(it.projCode) : '（选择项目后自动关联）'}</div>
+      </div>
+      </div>
+    </div>`).join('');
+  state.products.forEach(it => renderDailyValue(it.id));
+}
+
+/* ============ 当日产值（来自后台产品编号产值台账） ============ */
+/* 后台（product-value.html）对日报新增的产品编号自动建档并维护「最新预估产值」；
+   此处按 最新预估产值 × 今日完工比例 ÷ 100 实时计算当日产值展示。 */
+function loadValueRegistry() {
+  try { return JSON.parse(localStorage.getItem('dr_product_values') || '{}'); } catch (e) { return {}; }
+}
+function fmtMoneyCn(n) {
+  return '¥' + Number(n).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function dailyValueInfo(p) {
+  const reg = loadValueRegistry();
+  const e = reg[p.prod];
+  const to = parseFloat(p.todayRatio);
+  if (!e || e.latestValue == null) return { state: 'pending' };
+  if (isNaN(to)) return { state: 'noRatio', value: e.latestValue };
+  return { state: 'ok', value: e.latestValue, daily: e.latestValue * to / 100, ratio: to };
+}
+function renderDailyValue(id) {
+  const el = document.querySelector('.wi-daily[data-id="' + id + '"]');
+  if (!el) return;
+  const it = state.products.find(p => p.id === id);
+  if (!it || !it.prod) { el.innerHTML = ''; return; }
+  const info = dailyValueInfo(it);
+  if (info.state === 'pending') {
+    el.innerHTML = '<span class="dv-pending">当日产值：待后台填写预估产值</span>';
+  } else if (info.state === 'noRatio') {
+    el.innerHTML = '<span class="dv-pending">最新预估产值 ' + fmtMoneyCn(info.value) + ' · 待填今日完工比例</span>';
+  } else {
+    el.innerHTML = '<span class="dv-ok">当日产值 <b>' + fmtMoneyCn(info.daily) + '</b>（最新预估产值 ' + fmtMoneyCn(info.value) + ' × 今日 ' + info.ratio + '%）</span>';
+  }
+}
+
+/* ============ 照片 ============ */
+function onPhotosPicked(e) {
+  const files = Array.from(e.target.files || []);
+  files.forEach(f => {
+    const r = new FileReader();
+    r.onload = () => { state.photos.push(r.result); renderPhotos(); };
+    r.readAsDataURL(f);
+  });
+  e.target.value = '';
+}
+function renderPhotos() {
+  $('photoPreviews').innerHTML = state.photos.map((src, i) =>
+    `<div class="thumb"><img src="${src}"><button type="button" class="del" data-i="${i}" aria-label="删除">×</button></div>`).join('');
+  $('photoCount').textContent = state.photos.length ? `已上传 ${state.photos.length} 张` : '';
+}
+
+/* ============ 今日开销 ============ */
+function updateCostSum() {
+  const sum = state.costItems.reduce((a, c) => a + (parseFloat(c.amount) || 0), 0);
+  if (state.costItems.length) {
+    $('costSum').style.display = '';
+    $('costSumNum').textContent = '¥' + sum.toFixed(2);
+  } else { $('costSum').style.display = 'none'; }
+}
+function onCostInput(e) {
+  const t = e.target; const id = t.dataset.id; if (!id) return;
+  const it = state.costItems.find(c => c.id === id); if (!it) return;
+  if (t.classList.contains('cf-type')) it.type = t.value;
+  else if (t.classList.contains('cf-amt')) it.amount = t.value;
+  else if (t.classList.contains('cf-remark-inp')) it.remark = t.value;
+  updateCostSum();
+  refreshModDone();
+}
+function onCostChange(e) {
+  const t = e.target; const id = t.dataset.id; if (!id) return;
+  const it = state.costItems.find(c => c.id === id); if (!it) return;
+  if (t.classList.contains('cf-type')) it.type = t.value;
+  else if (t.classList.contains('cf-amt')) it.amount = t.value;
+  else if (t.classList.contains('cf-remark-inp')) it.remark = t.value;
+  renderCosts();   // 重新渲染以显隐「其他费用」备注框
+}
+function onCostFilePicked(e) {
+  const inp = e.target; if (!inp.classList.contains('cf-file')) return;
+  const id = inp.dataset.id; const it = state.costItems.find(c => c.id === id); if (!it) return;
+  const f = inp.files && inp.files[0]; if (!f) return;
+  const r = new FileReader(); r.onload = () => { it.photo = r.result; renderCosts(); }; r.readAsDataURL(f);
+}
+function renderCosts() {
+  const list = $('costList');
+  if (state.costItems.length === 0) {
+    list.innerHTML = '<div class="entry-empty">尚未添加费用，点击下方「＋ 添加费用」。</div>';
+  } else {
+    list.innerHTML = state.costItems.map(c => `
+      <div class="entry-row" data-id="${c.id}">
+        <div class="cf-line">
+          <select class="col-type cf-type" data-id="${c.id}"><option value="">费用类型</option>${COST_TYPES.map(t => `<option value="${t}"${t === c.type ? ' selected' : ''}>${t}</option>`).join('')}</select>
+          <div class="col-amt"><input type="number" min="0" step="0.01" class="cf-amt" data-id="${c.id}" value="${c.amount === '' ? '' : c.amount}" placeholder="金额"><span class="unit">元</span></div>
+          <button type="button" class="rm" data-id="${c.id}" aria-label="删除">×</button>
+        </div>
+        <div class="cf-photo">
+          <button type="button" class="ts-up" data-id="${c.id}">${c.photo ? '重传照片' : '上传照片'}</button>
+          <input type="file" class="cf-file" id="costFile-${c.id}" data-id="${c.id}" accept="image/*" hidden>
+          ${c.photo ? `<div class="cf-prev"><div class="thumb"><img src="${c.photo}"><button type="button" class="del cf-del" data-id="${c.id}" aria-label="删除照片">×</button></div></div>` : ''}
+        </div>
+        ${c.type === '其他费用' ? `
+        <div class="cf-remark">
+          <label>备注<span class="req">*</span><span class="opt">（选「其他费用」时必填）</span></label>
+          <input type="text" class="cf-remark-inp" data-id="${c.id}" value="${c.remark === '' ? '' : esc(c.remark)}" placeholder="请填写其他费用的具体说明">
+        </div>` : ''}
+      </div>`).join('');
+  }
+  const sum = state.costItems.reduce((a, c) => a + (parseFloat(c.amount) || 0), 0);
+  if (state.costItems.length) {
+    $('costSum').style.display = '';
+    $('costSumNum').textContent = '¥' + sum.toFixed(2);
+  } else { $('costSum').style.display = 'none'; }
+}
+
+/* ============ 分步向导：步骤条 + 完成度 ============ */
+const MODULES = [
+  { id: 'baseCard', t: '基础信息' },
+  { id: 'personnelCard', t: '人员考勤' },
+  { id: 'workCard', t: '作业信息' },
+  { id: 'costCard', t: '今日开销' }
+];
+let curStep = 0;
+function modVisible(id) { return !$(id).classList.contains('hidden'); }
+/* 步骤是否可用：未选考勤类型/班组时先全部可用，选择后禁用不适用的步骤 */
+function stepEnabled(idx) {
+  const m = MODULES[idx];
+  if (m.id === 'personnelCard' || m.id === 'workCard') return !state.attType || state.attType === '出勤';
+  if (m.id === 'costCard') return !state.teamCode || isOwnTeam(state.teamCode);
+  return true;
+}
+function nextEnabledIdx(from) { for (let i = from + 1; i < MODULES.length; i++) if (stepEnabled(i)) return i; return -1; }
+function prevEnabledIdx(from) { for (let i = from - 1; i >= 0; i--) if (stepEnabled(i)) return i; return -1; }
+function snapStep() {
+  if (stepEnabled(curStep)) return;
+  let j = nextEnabledIdx(curStep);
+  if (j < 0) j = prevEnabledIdx(curStep);
+  curStep = Math.max(0, j < 0 ? 0 : j);
+}
+function applyStep() {
+  MODULES.forEach((m, idx) => {
+    const pane = $('pane-' + idx);
+    if (pane) pane.classList.toggle('hidden', idx !== curStep);
+  });
+  const nav = $('modNav');
+  Array.from(nav.children).forEach((b, i) => b.classList.toggle('active', i === curStep));
+  show('btnPrev', prevEnabledIdx(curStep) >= 0);
+  show('btnNext', nextEnabledIdx(curStep) >= 0);
+  show('btnSubmit', nextEnabledIdx(curStep) < 0);
+  const mp = $('mpBody'); if (mp) mp.scrollTop = 0;
+  window.scrollTo(0, 0);
+}
+function goStep(i) {
+  if (i < 0 || i >= MODULES.length) return;
+  if (!stepEnabled(i)) return;                          // 不可用步骤不可进入
+  if (i > curStep && !stepValidate(MODULES[curStep].id)) {
+    toast('请先完成本步必填项（标红处）');
+    return;
+  }
+  curStep = i;
+  applyStep();
+  refreshModDone();
+}
+/* 每步的域级校验：标红具体字段，供「下一步」与提交前跳转使用 */
+function stepValidate(id) {
+  clearErr();
+  if (id === 'baseCard') {
+    const miss = [];
+    if (!state.date) miss.push('workDate');
+    if (!state.teamCode) miss.push('teamField');
+    if (!state.projectCode) miss.push('project');
+    if (!state.attType) miss.push('attTypeField');
+    if (state.attType === '出勤' && !state.jobType) miss.push('jobType');
+    if (state.attType === '场内等待') {
+      if (!state.weather) miss.push('weather');
+      if (!(state.waitDesc || '').trim()) miss.push('waitDesc');
+    }
+    if (miss.length) { markErr(miss); return false; }
+    return true;
+  }
+  if (id === 'personnelCard') {
+    if (state.attType !== '出勤') return true;            // 模块隐藏时不校验
+    if (state.members.length === 0) { markErr(['roster']); return false; }
+    return true;
+  }
+  if (id === 'workCard') {
+    if (state.attType !== '出勤') return true;
+    if (state.products.length === 0) { markErr(['products']); return false; }
+    const bad = [];
+    const own = isOwnTeam(state.teamCode);
+    state.products.forEach(p => {
+      const valid = p.prod && p.content && p.cumRatio !== '' && !isNaN(Number(p.cumRatio)) && Number(p.cumRatio) >= 0 && Number(p.cumRatio) <= 100;
+      const todayOk = !p.isExisting || p.contentAdjusted || (function () { const b = parseFloat(p.beforeRatio); const base = isNaN(b) ? 0 : b; return Number(p.cumRatio) >= base; })();
+      const stdOk = !own || p.isExisting || (p.stdDays !== '' && !isNaN(Number(p.stdDays)) && Number(p.stdDays) > 0);
+      if (!valid || !todayOk || !stdOk) bad.push('products');
+    });
+    if (bad.length) { markErr(bad); return false; }
+    return true;
+  }
+  if (id === 'costCard') {
+    const noRemark = state.costItems.some(c => c.type === '其他费用' && !(c.remark || '').trim());
+    if (noRemark) { markErr(['costCard']); return false; }
+    return true;
+  }
+  return true;
+}
+function renderModNav() {
+  const nav = $('modNav');
+  snapStep();
+  nav.innerHTML = MODULES.map((m, i) =>
+    `<button type="button" data-id="${m.id}" ${stepEnabled(i) ? '' : 'disabled'}><span class="mod-n" data-n="${m.id}">${i + 1}</span>${m.t}</button>`
+  ).join('');
+  Array.from(nav.children).forEach((b, i) => b.addEventListener('click', () => goStep(i)));
+  applyStep();
+  refreshModDone();
+}
+function modDone(id) {
+  if (id === 'baseCard') {
+    const needJob = state.attType === '出勤';
+    const needWeather = state.attType === '场内等待';
+    return !!(state.date && state.teamCode && state.projectCode && state.attType
+      && (!needJob || state.jobType) && (!needWeather || state.weather)
+      && (!needWeather || (state.waitDesc || '').trim()));
+  }
+  if (id === 'personnelCard') {
+    return state.attType === '出勤' && state.members.length > 0;
+  }
+  if (id === 'workCard') {
+    const own = isOwnTeam(state.teamCode);
+    return state.products.length > 0 && state.products.every(p => {
+      if (!p.prod || !p.content) return false;
+      const c = parseFloat(p.cumRatio);
+      if (isNaN(c) || c < 0 || c > 100) return false;   // 累计必须 0–100
+      if (p.isExisting && !p.contentAdjusted) {
+        const b = parseFloat(p.beforeRatio); const base = isNaN(b) ? 0 : b;
+        if (c < base) return false;                       // 今日 = 累计−历史 不能为负（调整后历史仅参考，不校验）
+      }
+      if (own && !p.isExisting && (p.stdDays === '' || isNaN(Number(p.stdDays)) || Number(p.stdDays) <= 0)) return false; // 新增编号必填标准人工天
+      return true;
+    });
+  }
+  if (id === 'costCard') {
+    return true; // 选填
+  }
+  return false;
+}
+function refreshModDone() {
+  const visible = MODULES.filter(m => !$(m.id).classList.contains('hidden'));
+  let done = 0;
+  visible.forEach(m => {
+    const ok = modDone(m.id);
+    if (ok) done++;
+    const navBtn = $('modNav').querySelector(`button[data-id="${m.id}"]`);
+    if (navBtn) navBtn.classList.toggle('done', ok);
+  });
+  const pct = visible.length ? Math.round(done / visible.length * 100) : 0;
+  $('modProg').style.width = pct + '%';
+}
+function refreshVisibility() {
+  const att = state.attType;
+  // 作业类型：仅「出勤」时填写
+  if (att !== '出勤' && state.jobType) { state.jobType = ''; renderJobType(); }
+  // 天气：仅「场内等待」时填写
+  if (att !== '场内等待' && state.weather) { state.weather = ''; renderWeather(); }
+  show('jobType', att === '出勤');
+  show('weather', att === '场内等待');
+  show('personnelCard', att === '出勤');
+  show('workCard', att === '出勤');
+  show('costCard', isOwnTeam(state.teamCode));
+  renderModNav();
+}
+
+/* ============ 提交 / 校验 / 重置 ============ */
+function clearErr() { document.querySelectorAll('.err').forEach(e => e.classList.remove('err')); }
+function markErr(ids) { ids.forEach(id => { const el = $(id); if (el) el.classList.add('err'); }); }
+
+function roleLabel(m) { return m.roleKind + (m.drive ? ' + ' + ROLE_DRIVE : ''); }
+
+function buildData() {
+  const team = teamByCode(state.teamCode);
+  const proj = PROJECTS.find(x => x.code === state.projectCode);
+  const own = isOwnTeam(state.teamCode);
+  const data = {
+    date: state.date,
+    team: team ? { code: team.code, name: team.name, type: team.type, leader: nameOf(team.leader) } : null,
+    project: proj ? { code: proj.code, name: proj.name, customer: proj.customer } : null,
+    attendanceType: state.attType,
+    weather: state.weather,
+    waitDescription: state.attType === '场内等待' ? state.waitDesc.trim() : null,
+    jobType: state.jobType ? { code: state.jobType, name: JOB_NAME[state.jobType] } : null,
+    personnel: state.attType === '出勤'
+      ? state.members.map(m => {
+          const roleNeeded = isOwnTeam(state.teamCode) && (state.jobType === 'bladeRepair' || state.jobType === 'bladeUpgrade');
+          return { memberId: m.memberId, name: nameOf(m.memberId), attendance: m.att, role: roleNeeded ? roleLabel(m) : null };
+        })
+      : [],
+    products: state.attType === '出勤' ? state.products.map(p => {
+      const info = dailyValueInfo(p);
+      return {
+        productNo: p.prod,
+        content: p.content,
+        standardManDays: own ? (p.stdDays === '' ? null : Number(p.stdDays)) : null,
+        beforeRatio: p.isExisting ? (p.beforeRatio === '' ? null : Number(p.beforeRatio)) : null,
+        todayRatio: p.contentAdjusted ? null : (function () { const t = deriveToday(p); return (t === '' || t == null) ? null : Number(t); })(),
+        cumRatio: p.cumRatio === '' ? null : Number(p.cumRatio),
+        dailyValue: info.state === 'ok' ? Number(info.daily.toFixed(2)) : null, // 当日产值 = 最新预估产值 × 今日完工比例 / 100（后台未填写预估产值时为 null）
+        projectCode: p.projCode || state.projectCode
+      };
+    }) : [],
+    photos: state.attType === '出勤' ? state.photos.map((_, i) => ({ index: i + 1, name: 'photo_' + (i + 1) + '.jpg' })) : [],
+    cost: own ? {
+      items: state.costItems.map(c => ({ type: c.type, amount: c.amount === '' ? null : Number(c.amount), hasPhoto: !!c.photo, remark: c.type === '其他费用' ? (c.remark || '').trim() : null })),
+      total: Number(state.costItems.reduce((a, c) => a + (parseFloat(c.amount) || 0), 0).toFixed(2))
+    } : null
+  };
+  return data;
+}
+
+function submitForm() {
+  clearErr();
+  const missBase = [];
+  if (!state.date) missBase.push('workDate');
+  if (!state.teamCode) missBase.push('teamField');
+  if (!state.projectCode) missBase.push('project');
+  if (!state.attType) missBase.push('attTypeField');
+  if (state.attType === '场内等待' && !state.weather) missBase.push('weather');
+  if (state.attType === '场内等待' && !state.waitDesc.trim()) missBase.push('waitDesc');
+  if (state.attType === '出勤' && !state.jobType) missBase.push('jobType');
+  let ok = true;
+  if (missBase.length) { markErr(missBase); ok = false; }
+
+  if (state.attType === '出勤' && state.members.length === 0) { markErr(['roster']); ok = false; }
+
+  // 作业信息（产品编号等）：仅考勤类型=出勤时需要填写
+  const bad = [];
+  if (state.attType === '出勤') {
+    if (state.products.length === 0) { markErr(['products']); ok = false; }
+    state.products.forEach(p => {
+      const c = parseFloat(p.cumRatio);
+      const cumOk = p.prod && p.content && !isNaN(c) && c >= 0 && c <= 100;
+      const todayOk = !p.isExisting || p.contentAdjusted || (function () { const b = parseFloat(p.beforeRatio); const base = isNaN(b) ? 0 : b; return c >= base; })();
+      const stdOk = !isOwnTeam(state.teamCode) || p.isExisting || (p.stdDays !== '' && !isNaN(Number(p.stdDays)) && Number(p.stdDays) > 0);
+      if (!cumOk || !todayOk || !stdOk) {
+        if (!bad.includes('products')) bad.push('products');
+        ok = false;
+      }
+    });
+    if (bad.length) markErr(bad);
+  }
+
+  // 今日开销：选「其他费用」必须填写备注
+  const noRemark = state.costItems.some(c => c.type === '其他费用' && !(c.remark || '').trim());
+  if (noRemark) {
+    markErr(['costCard']); ok = false;
+  }
+
+  if (!ok) {
+    // 自动跳到第一个未完成模块所在的步骤
+    const fi = MODULES.findIndex(m => modVisible(m.id) && !modDone(m.id));
+    if (fi >= 0 && fi !== curStep) { curStep = fi; applyStep(); }
+    toast('请完成必填项（标红处）');
+    return;
+  }
+
+  const data = buildData();
+  // 更新产品台账（下次选择同一编号时带出最新历史累计）
+  data.products.forEach(p => {
+    PRODUCT_LEDGER[p.productNo] = {
+      stdDays: p.standardManDays,
+      cumRatio: p.cumRatio,
+      content: p.content
+    };
+  });
+  // 持久化本次日报，供后续"新增日报"自动带入
+  saveReport({
+    savedAt: Date.now(), teamCode: state.teamCode, projectCode: state.projectCode, date: state.date,
+    attType: state.attType, weather: state.weather, waitDesc: state.waitDesc, jobType: state.jobType,
+    members: state.members, products: state.products, costItems: state.costItems, photos: state.photos
+  });
+
+  $('resultJson').textContent = JSON.stringify(data, null, 2);
+  refreshImportBar();
+  show('modalMask', true);
+}
+
+function resetForm() {
+  state.date = dateKey();
+  state.teamCode = '';
+  state.projectCode = '';
+  state.attType = '';
+  state.weather = '';
+  state.jobType = '';
+  state.members = [];
+  state.products = [];
+  state.costItems = [];
+  state.photos = [];
+  state.waitDesc = '';
+  pidSeq = 0;
+  $('in-date').value = state.date;
+  renderWeekday();
+  $('sel-team').value = '';
+  $('in-project').value = '';
+  $('teamHint').textContent = '';
+  $('sel-attType').value = '';
+  $('attTypeHint').textContent = '';
+  $('sel-jobType').value = '';
+  $('sel-weather').value = '';
+  renderAttType();
+  renderJobType();
+  renderWeather();
+  renderRoster();
+  renderProducts();
+  renderCosts();
+  renderPhotos();
+  refreshVisibility();
+  refreshImportBar();
+  curStep = 0;
+  renderModNav();
+  clearErr();
+  refreshModDone();
+  toast('已重置');
+}
+
+function copyJson() {
+  const txt = $('resultJson').textContent;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(() => toast('已复制 JSON'), () => toast('复制失败，请手动选择'));
+  } else {
+    const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); toast('已复制 JSON'); } catch (e) { toast('复制失败'); }
+    document.body.removeChild(ta);
+  }
+}
+
+init();
+</script>
+</body>
+</html>
