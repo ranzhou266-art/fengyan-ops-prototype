@@ -314,8 +314,8 @@
     animation: up .25s ease;
   }
   @keyframes up { from { transform: translateY(30px); opacity: .6; } to { transform: none; opacity: 1; } }
-  .modal-h { padding: 14px 16px; font-weight: 700; border-bottom: 1px solid #eef2f4; display: flex; justify-content: space-between; align-items: center; }
-  .modal-h .x { color: #9aa7b2; font-size: 20px; cursor: pointer; line-height: 1; }
+  .modal-h { padding: 14px 16px; font-weight: 700; border-bottom: 1px solid #eef2f4; display: flex; align-items: center; gap: 10px; }
+  .modal-h .x { color: #9aa7b2; font-size: 20px; cursor: pointer; line-height: 1; margin-left: auto; }
   .modal-b { padding: 12px 16px; overflow-y: auto; }
   .modal-b pre { background: #f4f7f9; border: 1px solid #e6edf1; border-radius: 10px; padding: 12px;
     font-size: 12px; line-height: 1.55; white-space: pre-wrap; word-break: break-all; margin: 0; color: #2a3742; }
@@ -351,6 +351,80 @@
     display: inline-flex; align-items: center; justify-content: center; padding: 0;
   }
   .prod-row .wi-daily { margin: 0 0 8px 2px; }
+
+  /* ============ 关联项点：小程序风格二级联动选择器 ============ */
+  .wi-link label .opt { margin-left: 6px; }
+  .ip-trigger {
+    border: 1.5px solid #d4dde3; border-radius: 10px; padding: 8px 10px;
+    min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    cursor: pointer; background: #fff;
+  }
+  .ip-trigger:active { background: #f2f7f5; }
+  .ip-placeholder { color: #9aa7b2; font-size: 14px; }
+  .ip-val { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1; font-size: 14px; flex-wrap: wrap; }
+  .ip-chip {
+    display: inline-flex; align-items: center; gap: 4px; max-width: 100%;
+    background: #eaf5ef; border: 1px solid #c9e6d8; color: #1f5c47; border-radius: 8px;
+    padding: 4px 6px 4px 8px; font-size: 12.5px; line-height: 1.3;
+  }
+  .ip-chip-cat { color: #2f8f6b; font-weight: 600; }
+  .ip-chip-name { color: #1f5c47; }
+  .ip-chip-code { font-size: 11px; color: #6b7a86; font-family: ui-monospace, Menlo, monospace; }
+  .ip-chip-x {
+    flex: 0 0 auto; width: 20px; height: 20px; border: none; background: #bfe3d0; color: #1f5c47;
+    border-radius: 6px; font-size: 13px; line-height: 1; cursor: pointer; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ip-chip-x:active { background: #a9d8c2; }
+  .ip-clear {
+    flex: 0 0 auto; height: 30px; padding: 0 12px; border: 1px solid #f0c4ba; background: #fdecea; color: #e0552f;
+    border-radius: 8px; font-size: 13px; cursor: pointer; white-space: nowrap;
+  }
+  .ip-clear:active { background: #f9d8d2; }
+  /* 选择弹层（底部弹出，小程序风格） */
+  .ip-modal { max-height: 84vh; display: flex; flex-direction: column; }
+  .ip-counter { font-size: 12.5px; color: #2f8f6b; font-weight: 500; margin-right: auto; margin-left: 8px; }
+  .ip-search { padding: 12px 16px; border-bottom: 1px solid #eef2f4; }
+  .ip-search input {
+    width: 100%; box-sizing: border-box; border: 1.5px solid #d4dde3; border-radius: 10px;
+    padding: 9px 12px; font-size: 14px; font-family: inherit; background: #f7fafb; color: #1f2d3d;
+  }
+  .ip-search input:focus { border-color: #2f8f6b; background: #fff; outline: none; }
+  .ip-body { display: flex; flex: 1; min-height: 0; }
+  .ip-cats { flex: 0 0 102px; overflow-y: auto; background: #f4f7f9; border-right: 1px solid #eef2f4; -webkit-overflow-scrolling: touch; }
+  .ip-cat {
+    padding: 13px 8px; font-size: 13.5px; color: #45525e; cursor: pointer;
+    text-align: center; line-height: 1.35; border-left: 3px solid transparent; position: relative;
+  }
+  .ip-cat.active { background: #fff; color: #2f8f6b; font-weight: 600; border-left-color: #2f8f6b; }
+  .ip-cat-badge {
+    display: inline-block; min-width: 16px; margin-top: 4px; padding: 1px 5px; border-radius: 999px;
+    background: #2f8f6b; color: #fff; font-size: 11px; font-weight: 600;
+  }
+  .ip-items-wrap { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
+  .ip-items { flex: 1; overflow-y: auto; padding: 4px 0; -webkit-overflow-scrolling: touch; }
+  .ip-item {
+    padding: 13px 14px; font-size: 14px; color: #1f2d3d; cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    border-bottom: 1px solid #f4f6f7;
+  }
+  .ip-item:active { background: #e7f1ec; }
+  .ip-item.selected { color: #2f8f6b; font-weight: 600; background: #f0faf5; }
+  .ip-item.selected .ip-code { color: #2f8f6b; }
+  .ip-check { flex: 0 0 auto; width: 18px; text-align: center; color: #2f8f6b; font-weight: 700; }
+  .ip-name { min-width: 0; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+  .ip-item-cat { font-size: 11px; color: #9aa7b2; font-weight: 400; }
+  .ip-code { font-size: 12px; color: #6b7a86; font-family: ui-monospace, Menlo, monospace; flex: 0 0 auto; }
+  .ip-empty { padding: 24px 16px; font-size: 13px; color: #9aa7b2; text-align: center; }
+  .ip-body.searching .ip-cats { display: none; }
+  .ip-footer {
+    display: flex; gap: 10px; padding: 10px 16px; border-top: 1px solid #eef2f4; background: #fff;
+  }
+  .ip-footer button { flex: 1; height: 44px; border-radius: 10px; font-size: 15px; cursor: pointer; font-family: inherit; }
+  .ip-clear-all { border: 1px solid #d4dde3; background: #fff; color: #5a6b78; }
+  .ip-clear-all:active { background: #f2f5f7; }
+  .ip-done { border: none; background: #2f8f6b; color: #fff; font-weight: 600; }
+  .ip-done:active { background: #287a5b; }
 </style>
 </head>
 <body>
@@ -494,6 +568,24 @@
   </div>
 </div>
 
+<!-- 关联项点：小程序风格二级联动选择器（分类 → 具体项点 + 模糊搜索） -->
+<div class="modal-mask hidden" id="ipMask">
+  <div class="modal ip-modal">
+    <div class="modal-h">关联项点<span class="ip-counter" id="ipCounter">可多选</span><span class="x" id="ipClose">×</span></div>
+    <div class="ip-search">
+      <input type="search" id="ipSearch" placeholder="搜索项点（如 前缘、润滑、螺栓、绝缘）" autocomplete="off">
+    </div>
+    <div class="ip-body" id="ipBody">
+      <div class="ip-cats" id="ipCats"></div>
+      <div class="ip-items-wrap"><div class="ip-items" id="ipItems"></div></div>
+    </div>
+    <div class="ip-footer">
+      <button type="button" class="ip-clear-all" id="ipClearAll">清空</button>
+      <button type="button" class="ip-done" id="ipDone">完成</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ============ 本地模拟数据 ============ */
 const MEMBERS = [
@@ -528,6 +620,51 @@ const PRODUCT_LEDGER = {
   'WG-2026-0005': { stdDays: 1, cumRatio: 91, content: '齿轮箱油样采集送检，高速轴对中与振动测试。' },
   'WG-2026-0006': { stdDays: 6, cumRatio: 20, content: '叶片后缘结构补强铺层，待固化后打磨。' }
 };
+
+/* 项点分类 + 项点（二级联动，支持模糊搜索；原型模拟数据，分类可自定义扩展） */
+const ITEM_POINT_CATS = [
+  { code: 'LEAF', name: '叶片维修', items: [
+    { code: 'L01', name: '叶片前缘检查与修复' },
+    { code: 'L02', name: '叶片后缘结构补强' },
+    { code: 'L03', name: '叶片表面清洗与脱漆' },
+    { code: 'L04', name: '叶根螺栓力矩紧固' },
+    { code: 'L05', name: '叶片内部探伤检测' }
+  ]},
+  { code: 'DRIVE', name: '传动系统', items: [
+    { code: 'D01', name: '主轴承润滑与油路疏通' },
+    { code: 'D02', name: '齿轮箱油样采集送检' },
+    { code: 'D03', name: '高速轴对中校正' },
+    { code: 'D04', name: '变桨轴承更换' },
+    { code: 'D05', name: '联轴器检查与更换' }
+  ]},
+  { code: 'ELEC', name: '电气系统', items: [
+    { code: 'E01', name: '变桨系统程序升级校准' },
+    { code: 'E02', name: '变桨电池容量测试' },
+    { code: 'E03', name: '发电机绝缘检测' },
+    { code: 'E04', name: '电缆接头紧固与测温' },
+    { code: 'E05', name: '控制柜元器件更换' }
+  ]},
+  { code: 'TOWER', name: '塔筒结构', items: [
+    { code: 'T01', name: '塔筒内壁防腐涂层' },
+    { code: 'T02', name: '塔筒螺栓力矩抽检' },
+    { code: 'T03', name: '塔基平台防水处理' },
+    { code: 'T04', name: '爬梯与平台检修' }
+  ]},
+  { code: 'YAW', name: '偏航系统', items: [
+    { code: 'Y01', name: '偏航电机绝缘检测' },
+    { code: 'Y02', name: '偏航制动盘更换' },
+    { code: 'Y03', name: '偏航齿圈润滑' },
+    { code: 'Y04', name: '偏航液压站维护' }
+  ]},
+  { code: 'FOUND', name: '基础与接地', items: [
+    { code: 'F01', name: '基础环沉降观测' },
+    { code: 'F02', name: '接地网电阻测试' },
+    { code: 'F03', name: '基础裂缝修补' }
+  ]}
+];
+/* 项点扁平索引：用于模糊搜索与回填显示 */
+const ITEM_POINT_FLAT = [];
+ITEM_POINT_CATS.forEach(c => c.items.forEach(it => ITEM_POINT_FLAT.push({ catCode: c.code, catName: c.name, code: it.code, name: it.name })));
 
 /* 考勤类型：固定 5 项 */
 const ATT_TYPES = ['出勤', '转场', '入场等待', '场内等待', '培训'];
@@ -594,7 +731,8 @@ function seedDemoReports() {
   const prod = (no, content, stdDays, before, today, exist) => ({
     prod: no, content, stdDays: (stdDays === null || stdDays === undefined) ? '' : stdDays,
     beforeRatio: exist ? before : '', todayRatio: String(today),
-    cumRatio: exist ? before + today : '', isExisting: !!exist, projCode: ''
+    cumRatio: exist ? before + today : '', isExisting: !!exist, projCode: '',
+    linkItems: []
   });
   const DEMO = [
     // ① 张北运维一班 + 张北坝上（昨天）：出勤·叶片维修，含角色与开销
@@ -715,6 +853,9 @@ function init() {
   $('prodList').addEventListener('input', onProdInput);
   $('prodList').addEventListener('change', onProdChange);
   $('prodList').addEventListener('click', e => {
+    const chipX = e.target.closest('.ip-chip-x'); if (chipX) { removeChip(chipX.dataset.linkChip, chipX.dataset.chipCat, chipX.dataset.chipCode); return; }
+    const clr = e.target.closest('.ip-clear'); if (clr) { clearItemPoint(clr.dataset.linkClear); return; }
+    const trig = e.target.closest('.ip-trigger'); if (trig) { openItemPoint(trig.dataset.link); return; }
     const tg = e.target.closest('.prod-toggle'); if (tg) {
       const id = tg.dataset.toggle; const it = state.products.find(p => p.id === id);
       if (it) { it.collapsed = !it.collapsed; renderProducts(); }
@@ -772,6 +913,24 @@ function init() {
   $('modalClose').addEventListener('click', () => show('modalMask', false));
   $('modalMask').addEventListener('click', e => { if (e.target.id === 'modalMask') show('modalMask', false); });
   $('btnCopy').addEventListener('click', copyJson);
+  $('ipClose').addEventListener('click', closeItemPoint);
+  $('ipDone').addEventListener('click', closeItemPoint);
+  $('ipClearAll').addEventListener('click', () => { const it = state.products.find(p => p.id === ipTargetId); if (it) { it.linkItems = []; renderIpCats(); renderIpItems(); updateIpCounter(); } });
+  $('ipMask').addEventListener('click', e => { if (e.target.id === 'ipMask') closeItemPoint(); });
+  $('ipSearch').addEventListener('input', e => {
+    ipSearchQ = e.target.value;
+    $('ipBody').classList.toggle('searching', ipSearchQ.trim() !== '');
+    renderIpItems();
+  });
+  $('ipCats').addEventListener('click', e => {
+    const c = e.target.closest('.ip-cat'); if (!c) return;
+    ipActiveCat = c.dataset.cat;
+    renderIpCats(); renderIpItems();
+  });
+  $('ipItems').addEventListener('click', e => {
+    const item = e.target.closest('.ip-item'); if (!item) return;
+    selectItemPoint(item.dataset.cat, item.dataset.code);
+  });
 }
 
 /* ============ 基础信息渲染 ============ */
@@ -886,7 +1045,9 @@ function loadLastReport(teamCode, projectCode) {
       beforeRatio: beforeRatio, todayRatio: todayRatio, cumRatio: cumRatio,
       isExisting: isExisting, editingContent: false, contentAdjusted: !!p.contentAdjusted,
       collapsed: idx > 0,
-      projCode: p.projCode || projectCode
+      projCode: p.projCode || projectCode,
+      linkItems: Array.isArray(p.linkItems) ? p.linkItems.slice() :
+        (p.linkCode ? [{ catName: p.linkCategory || '', catCode: '', code: p.linkCode, name: p.linkItem || '' }] : [])
     };
   });
   state.costItems = (rec.costItems || []).map(c => ({ id: newPid(), type: c.type || '', amount: (c.amount === null || c.amount === undefined) ? '' : c.amount, photo: c.photo || '', remark: c.remark || '' }));
@@ -1028,7 +1189,7 @@ $('rosterEmpty') && $('rosterEmpty').addEventListener('change', onRosterClick);
 /* ============ 产品编号 ============ */
 function addProduct() {
   const first = state.products[0];
-  const item = { id: newPid(), prod: '', content: '', stdDays: '', beforeRatio: '', todayRatio: '', cumRatio: '', isExisting: false, editingContent: false, contentAdjusted: false, collapsed: false, projCode: state.projectCode };
+  const item = { id: newPid(), prod: '', content: '', stdDays: '', beforeRatio: '', todayRatio: '', cumRatio: '', isExisting: false, editingContent: false, contentAdjusted: false, collapsed: false, projCode: state.projectCode, linkItems: [] };
   // 一次专注填一条：新增时折叠其他行
   state.products.forEach(p => { p.collapsed = true; });
   if (first) {
@@ -1190,9 +1351,125 @@ function renderProducts() {
       <div class="wi-field">
         <div class="prod-add-proj">${it.projCode ? '关联项目：' + esc(it.projCode) : '（选择项目后自动关联）'}</div>
       </div>
+      <div class="wi-field wi-link">
+        <label>关联项点<span class="opt">（选填·可多选）</span></label>
+        <div class="ip-trigger ${it.linkItems && it.linkItems.length ? 'has-val' : ''}" data-link="${it.id}">
+          ${it.linkItems && it.linkItems.length ? `
+            <div class="ip-val">
+              ${it.linkItems.map(l => `
+                <span class="ip-chip">
+                  <span class="ip-chip-cat">${esc(l.catName)}</span>
+                  <span class="ip-chip-name">${esc(l.name)}</span>
+                  <span class="ip-chip-code">${esc(l.code || '')}</span>
+                  <button type="button" class="ip-chip-x" data-link-chip="${it.id}" data-chip-code="${esc(l.code || '')}" data-chip-cat="${esc(l.catName)}" aria-label="移除该项点">×</button>
+                </span>`).join('')}
+            </div>
+            <button type="button" class="ip-clear" data-link-clear="${it.id}" aria-label="清空全部关联项点">清空</button>
+          ` : `
+            <span class="ip-placeholder">＋ 选择关联项点</span>
+          `}
+        </div>
+      </div>
       </div>
     </div>`).join('');
   state.products.forEach(it => renderDailyValue(it.id));
+}
+
+/* ============ 关联项点：二级联动选择器（小程序风格 + 模糊搜索） ============ */
+let ipTargetId = null;
+let ipActiveCat = ITEM_POINT_CATS[0].code;
+let ipSearchQ = '';
+
+/* 模糊命中：支持子串或有序子序列（如「前缘修」可命中「叶片前缘检查与修复」） */
+function fuzzyHit(text, q) {
+  if (!q) return true;
+  text = (text || '').toLowerCase();
+  q = q.toLowerCase();
+  if (text.indexOf(q) !== -1) return true;
+  let i = 0;
+  for (let k = 0; k < text.length && i < q.length; k++) { if (text[k] === q[i]) i++; }
+  return i === q.length;
+}
+function openItemPoint(id) {
+  const it = state.products.find(p => p.id === id); if (!it) return;
+  ipTargetId = id; ipSearchQ = ''; $('ipSearch').value = '';
+  // 定位到第一个已选项点所属分类，否则默认首个分类
+  const first = (it.linkItems && it.linkItems[0]) || null;
+  const defaultCat = first ? (first.catCode || (ITEM_POINT_CATS.find(c => c.name === first.catName) || {}).code) : null;
+  ipActiveCat = defaultCat || ITEM_POINT_CATS[0].code;
+  $('ipBody').classList.remove('searching');
+  renderIpCats(); renderIpItems();
+  updateIpCounter();
+  show('ipMask', true);
+}
+function renderIpCats() {
+  const cur = state.products.find(p => p.id === ipTargetId);
+  const selCount = it => (cur && cur.linkItems || []).filter(l => l.catName === it.name).length;
+  $('ipCats').innerHTML = ITEM_POINT_CATS.map(c =>
+    `<div class="ip-cat ${c.code === ipActiveCat ? 'active' : ''}" data-cat="${c.code}">${c.name}${selCount(c) ? `<span class="ip-cat-badge">${selCount(c)}</span>` : ''}</div>`
+  ).join('');
+}
+function ipIsSelected(catName, code) {
+  const cur = state.products.find(p => p.id === ipTargetId);
+  return !!(cur && cur.linkItems && cur.linkItems.some(l => l.catName === catName && l.code === code));
+}
+function renderIpItems() {
+  const cur = state.products.find(p => p.id === ipTargetId);
+  const q = ipSearchQ.trim();
+  const wrap = $('ipItems');
+  if (q) {
+    const hits = ITEM_POINT_FLAT.filter(x => fuzzyHit(x.name, q) || fuzzyHit(x.code, q));
+    if (hits.length === 0) { wrap.innerHTML = '<div class="ip-empty">未找到匹配的项点，换个关键词试试</div>'; return; }
+    wrap.innerHTML = hits.map(x => {
+      const sel = ipIsSelected(x.catName, x.code);
+      return `<div class="ip-item ${sel ? 'selected' : ''}" data-cat="${x.catCode}" data-code="${x.code}">
+        <span class="ip-name">${esc(x.name)}<span class="ip-item-cat">${esc(x.catName)}</span></span>
+        <span class="ip-check">${sel ? '✓' : ''}</span>
+        <span class="ip-code">${esc(x.code)}</span>
+      </div>`;
+    }).join('');
+  } else {
+    const cat = ITEM_POINT_CATS.find(c => c.code === ipActiveCat) || ITEM_POINT_CATS[0];
+    wrap.innerHTML = cat.items.map(it => {
+      const sel = ipIsSelected(cat.name, it.code);
+      return `<div class="ip-item ${sel ? 'selected' : ''}" data-cat="${cat.code}" data-code="${it.code}">
+        <span class="ip-name">${esc(it.name)}</span>
+        <span class="ip-check">${sel ? '✓' : ''}</span>
+        <span class="ip-code">${esc(it.code)}</span>
+      </div>`;
+    }).join('');
+  }
+}
+function selectItemPoint(catCode, itemCode) {
+  const it = state.products.find(p => p.id === ipTargetId); if (!it) return;
+  const cat = ITEM_POINT_CATS.find(c => c.code === catCode); if (!cat) return;
+  const item = cat.items.find(x => x.code === itemCode); if (!item) return;
+  it.linkItems = it.linkItems || [];
+  const idx = it.linkItems.findIndex(l => l.catName === cat.name && l.code === item.code);
+  if (idx >= 0) { it.linkItems.splice(idx, 1); }   // 再次点击取消
+  else { it.linkItems.push({ catCode: cat.code, catName: cat.name, code: item.code, name: item.name }); }
+  renderIpCats(); renderIpItems(); updateIpCounter();   // 保持弹层打开，支持连续多选
+}
+function removeChip(id, catName, code) {
+  const it = state.products.find(p => p.id === id); if (!it) return;
+  it.linkItems = (it.linkItems || []).filter(l => !(l.catName === catName && l.code === code));
+  renderProducts(); refreshModDone();
+}
+function clearItemPoint(id) {
+  const it = state.products.find(p => p.id === id); if (!it) return;
+  it.linkItems = [];
+  renderProducts();
+  refreshModDone();
+}
+function updateIpCounter() {
+  const cur = state.products.find(p => p.id === ipTargetId);
+  const n = cur && cur.linkItems ? cur.linkItems.length : 0;
+  const el = $('ipCounter'); if (el) el.textContent = n ? `已选 ${n} 项` : '可多选';
+}
+function closeItemPoint() {
+  show('ipMask', false);
+  renderProducts();   // 关闭弹层时刷新卡片，显示已选/已移除的项点
+  refreshModDone();
 }
 
 /* ============ 当日产值（来自后台产品编号产值台账） ============ */
@@ -1496,7 +1773,8 @@ function buildData() {
         todayRatio: p.contentAdjusted ? null : (function () { const t = deriveToday(p); return (t === '' || t == null) ? null : Number(t); })(),
         cumRatio: p.cumRatio === '' ? null : Number(p.cumRatio),
         dailyValue: info.state === 'ok' ? Number(info.daily.toFixed(2)) : null, // 当日产值 = 最新预估产值 × 今日完工比例 / 100（后台未填写预估产值时为 null）
-        projectCode: p.projCode || state.projectCode
+        projectCode: p.projCode || state.projectCode,
+        linkItems: (p.linkItems || []).map(l => ({ category: l.catName || null, item: l.name || null, code: l.code || null }))
       };
     }) : [],
     photos: state.attType === '出勤' ? state.photos.map((_, i) => ({ index: i + 1, name: 'photo_' + (i + 1) + '.jpg' })) : [],
